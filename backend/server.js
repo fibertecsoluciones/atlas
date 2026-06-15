@@ -31,6 +31,24 @@ const limiter = rateLimit({
 });
 app.use('/api/', limiter);
 
+
+
+// Ruta de prueba (agregar ANTES de los middlewares)
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'API funcionando correctamente' });
+});
+
+// Ruta de municipios pública (no requiere autenticación)
+app.get('/api/auth/municipios', async (req, res) => {
+    const pool = require('./config/database');
+    try {
+        const result = await pool.query('SELECT id, nombre, slug FROM municipios WHERE activo = true');
+        res.json(result.rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Parseo de JSON y datos de formularios
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

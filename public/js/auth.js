@@ -13,24 +13,34 @@ const loadingDiv = document.getElementById('loading');
 // =====================================================
 // CARGAR MUNICIPIOS
 // =====================================================
+// =====================================================
+// CARGAR MUNICIPIOS EN EL SELECTOR
+// =====================================================
+
 async function cargarMunicipiosLogin() {
-    if (!municipioSelect) return;
+    const select = document.getElementById('municipio');
+    if (!select) return;
     
     try {
-        const municipios = await api.obtenerMunicipios();
+        const response = await fetch('/api/auth/municipios');
+        const municipios = await response.json();
         
-        municipioSelect.innerHTML = '<option value="">Selecciona tu municipio</option>';
+        select.innerHTML = '<option value="">Selecciona tu municipio</option>';
         
         municipios.forEach(m => {
             const option = document.createElement('option');
             option.value = m.slug;
             option.textContent = m.nombre;
-            municipioSelect.appendChild(option);
+            select.appendChild(option);
         });
     } catch (error) {
         console.error('Error cargando municipios:', error);
+        select.innerHTML = '<option value="">Error al cargar municipios</option>';
     }
 }
+
+// Llamar a la función cuando carga la página
+document.addEventListener('DOMContentLoaded', cargarMunicipiosLogin);
 
 // =====================================================
 // LOGIN
