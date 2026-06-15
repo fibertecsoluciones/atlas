@@ -2,10 +2,10 @@
   "name": "sistema-atlas-sas",
   "version": "1.0.0",
   "description": "Sistema SAS de gestión de emergencias para Protección Civil",
-  "main": "server.js",
+  "main": "backend/server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js"
+    "start": "cd backend && npm install && node server.js",
+    "build": "echo 'Build completed'"
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -18,7 +18,8 @@
     "express-rate-limit": "^6.7.0",
     "helmet": "^7.0.0"
   },
-  "devDependencies": {
-    "nodemon": "^3.0.1"
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
   }
 }
