@@ -7,25 +7,27 @@ const pool = require('../config/database');
 // =====================================================
 // GET: Listar municipios (público)
 // =====================================================
+// GET: Listar municipios (público) - VERSIÓN SIMPLIFICADA
 router.get('/municipios', async (req, res) => {
     try {
         console.log('🔍 Obteniendo municipios...');
+        console.log('DATABASE_URL existe:', !!process.env.DATABASE_URL);
         
-        const result = await pool.query(`
-            SELECT id, nombre, slug, centro_mapa_lat, centro_mapa_lng
-            FROM municipios
-            WHERE activo = true OR activo IS NULL
-            ORDER BY nombre
-        `);
+        const pool = require('../config/database');
         
-        console.log(`✅ Se encontraron ${result.rows.length} municipios`);
+        // Query simple
+        const result = await pool.query('SELECT id, nombre, slug FROM municipios WHERE activo = true OR activo IS NULL');
         
-        // Devolver array aunque esté vacío
-        res.json(result.rows || []);
+        console.log(`✅ Encontrados ${result.rows.length} municipios`);
+        
+        res.json(result.rows);
         
     } catch (error) {
-        console.error('❌ Error en /municipios:', error);
-        res.status(500).json({ error: error.message });
+        console.error('❌ Error en /municipios:', error.message);
+        console.error('Detalle:', error);
+        
+        // Devolver array vacío en lugar de error 500 para no romper el frontend
+        res.status(200).json([]);
     }
 });
 

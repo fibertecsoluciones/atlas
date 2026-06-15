@@ -9,52 +9,62 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // =====================================================
-// MIDDLEWARES GLOBALES
+// IMPORTANTE: Configurar trust proxy para Railway
 // =====================================================
+app.set('trust proxy', 1);  // ← SOLUCIONA el error de rate limiting
 
-// Seguridad
+// =====================================================
+// MIDDLEWARES
+// =====================================================
 app.use(helmet({
     contentSecurityPolicy: false,
 }));
 
-// CORS
 app.use(cors({
     origin: '*',
     credentials: true
 }));
 
-// Rate limiting
+// Rate limiting (corregido)
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
-    message: { error: 'Demasiadas peticiones, intenta más tarde' }
+    message: { error: 'Demasiadas peticiones, intenta más tarde' },
+    standardHeaders: true,
+    legacyHeaders: false,
 });
 app.use('/api/', limiter);
 
-// Parseo de JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// Archivos estáticos (frontend)
 app.use(express.static(path.join(__dirname, '../public')));
 
 // =====================================================
-// RUTAS DE LA API (TODAS aquí, en orden)
+// RUTAS DE PRUEBA (para diagnosticar)
 // =====================================================
-
-// Ruta de prueba
 app.get('/api/test', (req, res) => {
     res.json({ message: 'API funcionando correctamente' });
 });
 
-// Rutas principales (todas manejan sus propios endpoints)
-app.use('/api/auth', require('./routes/auth'));      // ← Esto incluye /municipios
+app.get('/api/diagnostico', (req, res) => {
+    res.json({ 
+        status: 'OK',
+        timestamp: new Date().toISOString(),
+        has_db_url: !!process.env.DATABASE_URL,
+        node_version: process.version
+    });
+});
+
+// =====================================================
+// RUTAS DE LA API
+// =====================================================
+app.use('/api/auth', require('./routes/auth'));
 app.use('/api/incidentes', require('./routes/incidentes'));
 app.use('/api/albergues', require('./routes/albergues'));
 app.use('/api/zonas', require('./routes/zonas'));
 
 // =====================================================
-// RUTA DE SALUD (para Railway)
+// RUTA DE SALUD
 // =====================================================
 app.get('/health', (req, res) => {
     res.json({ 
@@ -65,7 +75,7 @@ app.get('/health', (req, res) => {
 });
 
 // =====================================================
-// RUTA CATCH-ALL (siempre al final)
+// CATCH-ALL
 // =====================================================
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
@@ -75,13 +85,6 @@ app.get('*', (req, res) => {
 // INICIAR SERVIDOR
 // =====================================================
 app.listen(PORT, () => {
-    console.log(`
-    ╔══════════════════════════════════════════════════╗
-    ║     SISTEMA ATLAS SAS - PROTECCIÓN CIVIL        ║
-    ║                                                  ║
-    ║   🚀 Servidor corriendo en puerto: ${PORT}        ║
-    ║   📍 API: http://localhost:${PORT}/api          ║
-    ║   🌐 Web: http://localhost:${PORT}              ║
-    ╚══════════════════════════════════════════════════╝
-    `);
+    console.log(`✅ Servidor corriendo en puerto ${PORT}`);
+    console.log(`📡 DATABASE_URL configurada: ${process.env.DATABASE_URL ? 'SÍ' : 'NO'}`);
 });
