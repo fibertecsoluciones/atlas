@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Protección Civil - Reporte de Emergencias</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Estilos propios -->
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="header">
+        <h1>
+            <span>🚨</span>
+            Protección Civil - Reporte Ciudadano
+        </h1>
+        <select id="municipio-selector">
+            <option value="">Selecciona tu municipio</option>
+        </select>
+    </div>
+    
+    <div class="container">
+        <div id="mapa"></div>
+        
+        <div class="form-panel">
+            <h2>📝 Reportar Emergencia</h2>
+            
+            <div class="form-group">
+                <label>📍 Tipo de emergencia:</label>
+                <div class="tipos-grid" id="tipos-emergencia">
+                    <div class="tipo-card" data-tipo="incendio">
+                        <span>🔥</span>
+                        <small>Incendio</small>
+                    </div>
+                    <div class="tipo-card" data-tipo="inundacion">
+                        <span>🌊</span>
+                        <small>Inundación</small>
+                    </div>
+                    <div class="tipo-card" data-tipo="deslizamiento">
+                        <span>⛰️</span>
+                        <small>Deslizamiento</small>
+                    </div>
+                    <div class="tipo-card" data-tipo="accidente">
+                        <span>🚗</span>
+                        <small>Accidente</small>
+                    </div>
+                    <div class="tipo-card" data-tipo="arbol_caido">
+                        <span>🌳</span>
+                        <small>Árbol caído</small>
+                    </div>
+                    <div class="tipo-card" data-tipo="otro">
+                        <span>⚠️</span>
+                        <small>Otro</small>
+                    </div>
+                </div>
+                <input type="hidden" id="tipo-seleccionado" required>
+            </div>
+            
+            <div class="form-group">
+                <label>📝 Descripción:</label>
+                <textarea id="descripcion" placeholder="Describe lo que está sucediendo..." required></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label>📸 Foto (opcional):</label>
+                <input type="file" id="foto" accept="image/*" capture="environment">
+            </div>
+            
+            <div class="form-group">
+                <label>👤 Tu nombre (opcional):</label>
+                <input type="text" id="nombre" placeholder="Cómo quieres que te llamen">
+            </div>
+            
+            <div class="form-group">
+                <label>📱 Teléfono (opcional):</label>
+                <input type="tel" id="telefono" placeholder="Para contacto si es necesario">
+            </div>
+            
+            <div class="ubicacion-info" id="ubicacion-info">
+                ✏️ Haz clic en el mapa para marcar la ubicación
+            </div>
+            
+            <button class="btn-enviar" id="btn-enviar" disabled>
+                📍 Selecciona una ubicación en el mapa
+            </button>
+            
+            <div class="loading" id="loading">⏳ Enviando reporte...</div>
+            <div class="success" id="success">✅ ¡Reporte enviado con éxito!</div>
+            <div class="error" id="error">❌ Error al enviar. Intenta de nuevo.</div>
+        </div>
+    </div>
+    
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Scripts propios -->
+    <script src="/js/config.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/mapa.js"></script>
+    <script src="/js/incidentes.js"></script>
+</body>
+</html>

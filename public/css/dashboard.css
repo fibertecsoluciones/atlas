@@ -1,0 +1,207 @@
+/* =====================================================
+   ESTILOS DASHBOARD - SISTEMA ATLAS SAS
+   ===================================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f2f5;
+}
+
+/* =====================================================
+   HEADER DASHBOARD
+   ===================================================== */
+.header {
+    background: linear-gradient(135deg, #1e3a8a, #dc2626);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logout-btn {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.logout-btn:hover {
+    background: rgba(255,255,255,0.3);
+}
+
+/* =====================================================
+   ESTADÍSTICAS
+   ===================================================== */
+.stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    padding: 20px;
+}
+
+.stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.stat-card h3 {
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+}
+
+.stat-card .number {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #1e3a8a;
+}
+
+/* =====================================================
+   CONTENEDOR PRINCIPAL
+   ===================================================== */
+.container {
+    display: grid;
+    grid-template-columns: 1fr 350px;
+    height: calc(100vh - 180px);
+    gap: 0;
+    padding: 0 20px;
+}
+
+#mapa {
+    height: 100%;
+    width: 100%;
+    border-radius: 12px;
+}
+
+/* =====================================================
+   PANEL DE INCIDENTES
+   ===================================================== */
+.incidentes-panel {
+    background: white;
+    margin-left: 20px;
+    border-radius: 12px;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.incidentes-panel h3 {
+    margin-bottom: 15px;
+    color: #1e3a8a;
+}
+
+.incidente-card {
+    background: #f8f9fa;
+    border-left: 4px solid #dc2626;
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.incidente-card:hover {
+    transform: translateX(-5px);
+}
+
+.incidente-card.prioridad-1 {
+    border-left-color: #dc2626;
+    background: #fee2e2;
+}
+
+.incidente-card.prioridad-2 {
+    border-left-color: #f59e0b;
+}
+
+.incidente-card.prioridad-3 {
+    border-left-color: #10b981;
+}
+
+.incidente-tipo {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.incidente-desc {
+    font-size: 0.85rem;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.incidente-fecha {
+    font-size: 0.75rem;
+    color: #999;
+}
+
+/* =====================================================
+   ESTADOS
+   ===================================================== */
+.estado-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.estado-pendiente { background: #ef4444; color: white; }
+.estado-en_proceso { background: #f59e0b; color: white; }
+.estado-en_revision { background: #8b5cf6; color: white; }
+.estado-resuelto { background: #10b981; color: white; }
+
+/* =====================================================
+   MARCADORES DEL MAPA
+   ===================================================== */
+.marcador-incidente {
+    background: transparent;
+}
+
+.marcador-albergue {
+    background: transparent;
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+@media (max-width: 768px) {
+    .stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    #mapa {
+        height: 400px;
+        margin-bottom: 20px;
+    }
+    
+    .incidentes-panel {
+        margin-left: 0;
+        max-height: 400px;
+    }
+}
