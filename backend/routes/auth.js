@@ -5,7 +5,32 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 
 // =====================================================
-// POST: Login de usuario
+// GET: Listar municipios (público)
+// =====================================================
+router.get('/municipios', async (req, res) => {
+    try {
+        console.log('🔍 Obteniendo municipios...');
+        
+        const result = await pool.query(`
+            SELECT id, nombre, slug, centro_mapa_lat, centro_mapa_lng
+            FROM municipios
+            WHERE activo = true OR activo IS NULL
+            ORDER BY nombre
+        `);
+        
+        console.log(`✅ Se encontraron ${result.rows.length} municipios`);
+        
+        // Devolver array aunque esté vacío
+        res.json(result.rows || []);
+        
+    } catch (error) {
+        console.error('❌ Error en /municipios:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// =====================================================
+// POST: Login
 // =====================================================
 router.post('/login', async (req, res) => {
     try {
@@ -15,16 +40,14 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Email y contraseña requeridos' });
         }
         
-        // Buscar usuario
         let query = `
             SELECT u.*, m.id as municipio_id, m.nombre as municipio_nombre, m.slug as municipio_slug
             FROM usuarios u
             JOIN municipios m ON u.municipio_id = m.id
             WHERE u.email = $1 AND u.activo = true
         `;
-        const params = [email];
+        let params = [email];
         
-        // Si se especifica municipio, filtrar
         if (municipio_slug) {
             query += ` AND m.slug = $2`;
             params.push(municipio_slug);
@@ -38,19 +61,13 @@ router.post('/login', async (req, res) => {
         
         const user = result.rows[0];
         
-        // Verificar contraseña
         const validPassword = await bcrypt.compare(password, user.password_hash);
         if (!validPassword) {
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
         
-        // Actualizar último acceso
-        await pool.query(
-            'UPDATE usuarios SET ultimo_acceso = NOW() WHERE id = $1',
-            [user.id]
-        );
+        await pool.query('UPDATE usuarios SET ultimo_acceso = NOW() WHERE id = $1', [user.id]);
         
-        // Generar token JWT
         const token = jwt.sign(
             {
                 id: user.id,
@@ -60,7 +77,7 @@ router.post('/login', async (req, res) => {
                 municipio_id: user.municipio_id,
                 municipio_slug: user.municipio_slug
             },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || 'secreto-temporal',
             { expiresIn: '8h' }
         );
         
@@ -81,28 +98,8 @@ router.post('/login', async (req, res) => {
         });
         
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error en el servidor' });
-    }
-});
-
-// =====================================================
-// GET: Listar municipios disponibles (para login)
-// =====================================================
-router.get('/municipios', async (req, res) => {
-    try {
-        const result = await pool.query(`
-            SELECT id, nombre, slug, centro_mapa_lat, centro_mapa_lng
-            FROM municipios
-            WHERE activo = true
-            ORDER BY nombre
-        `);
-        
-        res.json(result.rows);
-        
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Error al obtener municipios' });
+        console.error('Error en login:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 

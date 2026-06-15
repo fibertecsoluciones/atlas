@@ -14,42 +14,24 @@ const PORT = process.env.PORT || 3000;
 
 // Seguridad
 app.use(helmet({
-    contentSecurityPolicy: false, // Deshabilitar para Leaflet
+    contentSecurityPolicy: false,
 }));
 
 // CORS
 app.use(cors({
-    origin: '*', // En producción, restringir a tu dominio
+    origin: '*',
     credentials: true
 }));
 
-// Rate limiting (protección contra ataques)
+// Rate limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // 100 peticiones por IP
+    windowMs: 15 * 60 * 1000,
+    max: 100,
     message: { error: 'Demasiadas peticiones, intenta más tarde' }
 });
 app.use('/api/', limiter);
 
-
-
-// Ruta de prueba (agregar ANTES de los middlewares)
-app.get('/api/test', (req, res) => {
-    res.json({ message: 'API funcionando correctamente' });
-});
-
-// Ruta de municipios pública (no requiere autenticación)
-app.get('/api/auth/municipios', async (req, res) => {
-    const pool = require('./config/database');
-    try {
-        const result = await pool.query('SELECT id, nombre, slug FROM municipios WHERE activo = true');
-        res.json(result.rows);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
-// Parseo de JSON y datos de formularios
+// Parseo de JSON
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -57,13 +39,19 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 // =====================================================
-// RUTAS DE LA API
+// RUTAS DE LA API (TODAS aquí, en orden)
 // =====================================================
 
+// Ruta de prueba
+app.get('/api/test', (req, res) => {
+    res.json({ message: 'API funcionando correctamente' });
+});
+
+// Rutas principales (todas manejan sus propios endpoints)
+app.use('/api/auth', require('./routes/auth'));      // ← Esto incluye /municipios
 app.use('/api/incidentes', require('./routes/incidentes'));
 app.use('/api/albergues', require('./routes/albergues'));
 app.use('/api/zonas', require('./routes/zonas'));
-app.use('/api/auth', require('./routes/auth'));
 
 // =====================================================
 // RUTA DE SALUD (para Railway)
@@ -77,7 +65,7 @@ app.get('/health', (req, res) => {
 });
 
 // =====================================================
-// RUTA PRINCIPAL (envía el frontend)
+// RUTA CATCH-ALL (siempre al final)
 // =====================================================
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../public/index.html'));
@@ -94,9 +82,6 @@ app.listen(PORT, () => {
     ║   🚀 Servidor corriendo en puerto: ${PORT}        ║
     ║   📍 API: http://localhost:${PORT}/api          ║
     ║   🌐 Web: http://localhost:${PORT}              ║
-    ║                                                  ║
-    ║   ✅ Multi-tenant activado                       ║
-    ║   ✅ Base de datos conectada                     ║
     ╚══════════════════════════════════════════════════╝
     `);
 });
