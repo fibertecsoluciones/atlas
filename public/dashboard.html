@@ -93,104 +93,40 @@
             </div>
         </div>
 
-        <!-- PANEL LATERAL -->
-        <aside class="panel-lateral">
-            <!-- Tabs -->
-            <div class="panel-tabs">
-                <button class="tab-btn active" data-tab="incidentes">📋 Incidentes</button>
-                <button class="tab-btn" data-tab="albergues">🏠 Albergues</button>
-                <button class="tab-btn" data-tab="riesgos">⚠️ Riesgos</button>
-                <button class="tab-btn" data-tab="reportar">📝 Reportar</button>
-            </div>
+       <!-- =============================================
+PANEL LATERAL - TABS
+============================================= -->
+<div class="panel-tabs">
+    <button class="tab-btn active" data-tab="incidentes">📋 Incidentes</button>
+    <button class="tab-btn" data-tab="albergues">🏠 Albergues</button>
+    <button class="tab-btn" data-tab="riesgos">⚠️ Riesgos</button>
+    <button class="tab-btn" data-tab="municipios">🏛️ Municipios</button>   <!-- ← NUEVO -->
+    <button class="tab-btn" data-tab="usuarios">👤 Usuarios</button>        <!-- ← NUEVO -->
+    <button class="tab-btn" data-tab="reportar">📝 Reportar</button>
+</div>
 
             <!-- CONTENIDO DE TABS -->
-            <div class="panel-content">
-                <!-- TAB: Incidentes -->
-                <div id="tab-incidentes" class="tab-content active">
-                    <div class="tab-header">
-                        <h3>📋 Incidentes Recientes</h3>
-                        <div class="tab-filtros">
-                            <select id="filtro-estado" onchange="filtrarIncidentes()">
-                                <option value="todos">Todos</option>
-                                <option value="pendiente">Pendientes</option>
-                                <option value="en_proceso">En Proceso</option>
-                                <option value="resuelto">Resueltos</option>
-                            </select>
-                            <select id="filtro-tipo" onchange="filtrarIncidentes()">
-                                <option value="todos">Todos los tipos</option>
-                                <option value="incendio">🔥 Incendio</option>
-                                <option value="inundacion">🌊 Inundación</option>
-                                <option value="deslizamiento">⛰️ Deslizamiento</option>
-                                <option value="accidente">🚗 Accidente</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div id="lista-incidentes" class="lista-incidentes">
-                        <div class="loading-spinner">Cargando incidentes...</div>
-                    </div>
-                </div>
+            <!-- TAB: Municipios -->
+<div id="tab-municipios" class="tab-content">
+    <div class="tab-header">
+        <h3>🏛️ Municipios</h3>
+        <button class="btn-agregar" onclick="abrirFormularioMunicipio()">➕ Agregar</button>
+    </div>
+    <div id="lista-municipios" class="lista-municipios">
+        <div class="loading-spinner">Cargando municipios...</div>
+    </div>
+</div>
 
-                <!-- TAB: Albergues -->
-                <div id="tab-albergues" class="tab-content">
-                    <div class="tab-header">
-                        <h3>🏠 Albergues</h3>
-                        <button class="btn-agregar" onclick="abrirFormularioAlbergue()">➕ Agregar</button>
-                    </div>
-                    <div id="lista-albergues" class="lista-albergues">
-                        <div class="loading-spinner">Cargando albergues...</div>
-                    </div>
-                </div>
-
-                <!-- TAB: Riesgos -->
-                <div id="tab-riesgos" class="tab-content">
-                    <div class="tab-header">
-                        <h3>⚠️ Zonas de Riesgo</h3>
-                        <button class="btn-agregar" onclick="activarDibujoPoligono()">✏️ Dibujar</button>
-                    </div>
-                    <div id="lista-riesgos" class="lista-riesgos">
-                        <div class="loading-spinner">Cargando zonas de riesgo...</div>
-                    </div>
-                </div>
-
-                <!-- TAB: Reportar -->
-                <div id="tab-reportar" class="tab-content">
-                    <h3>📝 Reportar Incidente</h3>
-                    <form id="form-reporte" class="form-reporte">
-                        <div class="form-group">
-                            <label>Tipo de emergencia</label>
-                            <select id="reporte-tipo" required>
-                                <option value="">Seleccionar...</option>
-                                <option value="incendio">🔥 Incendio</option>
-                                <option value="inundacion">🌊 Inundación</option>
-                                <option value="deslizamiento">⛰️ Deslizamiento</option>
-                                <option value="accidente">🚗 Accidente</option>
-                                <option value="arbol_caido">🌳 Árbol caído</option>
-                                <option value="otro">⚠️ Otro</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Descripción</label>
-                            <textarea id="reporte-descripcion" rows="3" placeholder="Describe la emergencia..." required></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Ubicación</label>
-                            <div class="ubicacion-input">
-                                <input type="text" id="reporte-ubicacion" placeholder="Dirección o coordenadas" readonly>
-                                <button type="button" class="btn-ubicacion" onclick="seleccionarUbicacionMapa()">📍 Seleccionar en mapa</button>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Foto (opcional)</label>
-                            <input type="file" id="reporte-foto" accept="image/*">
-                        </div>
-                        <div class="form-group">
-                            <label>Tu nombre (opcional)</label>
-                            <input type="text" id="reporte-nombre" placeholder="Cómo quieres que te llamen">
-                        </div>
-                        <button type="submit" class="btn-enviar">🚨 Enviar Reporte</button>
-                    </form>
-                </div>
-            </div>
+<!-- TAB: Usuarios -->
+<div id="tab-usuarios" class="tab-content">
+    <div class="tab-header">
+        <h3>👤 Usuarios</h3>
+        <button class="btn-agregar" onclick="abrirFormularioUsuario()">➕ Agregar</button>
+    </div>
+    <div id="lista-usuarios" class="lista-usuarios">
+        <div class="loading-spinner">Cargando usuarios...</div>
+    </div>
+</div>
         </aside>
     </main>
 
