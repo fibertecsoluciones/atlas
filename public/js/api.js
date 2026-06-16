@@ -59,13 +59,19 @@ class APIClient {
     
     // Autenticación
     async login(email, password, municipioSlug) {
-        const response = await fetch(`${this.baseUrl}/api/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, municipio_slug: municipioSlug })
-        });
-        return response.json();
-    }
+    const payload = { email, password, municipio_slug: municipioSlug };
+    console.log('📤 Enviando login:', payload);  // ← Agrega esto
+    
+    const response = await fetch(`${this.baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    
+    const data = await response.json();
+    console.log('📥 Respuesta del servidor:', data);  // ← Agrega esto
+    return data;
+}
     
     async obtenerMunicipios() {
         const response = await fetch(`${this.baseUrl}/api/auth/municipios`);

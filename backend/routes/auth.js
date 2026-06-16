@@ -17,55 +17,67 @@ router.get('/municipios', async (req, res) => {
     }
 });
 
-// POST: Login (VERSIÓN SIMPLIFICADA Y CORREGIDA)
+// POST: Login - VERSIÓN DEFINITIVA
 router.post('/login', async (req, res) => {
     try {
         const { email, password, municipio_slug } = req.body;
         
-        console.log('🔍 ===== INTENTO DE LOGIN =====');
-        console.log('📧 Email:', email);
-        console.log('🏛️ Municipio slug:', municipio_slug);
+        console.log('========================================');
+        console.log('🔍 NUEVO INTENTO DE LOGIN');
+        console.log('📧 Email recibido:', email);
+        console.log('🏛️ Municipio recibido:', municipio_slug);
+        console.log('🔑 Password recibida:', password ? '***' : 'NO');
+        console.log('========================================');
         
         if (!email || !password) {
             console.log('❌ Email o password faltante');
             return res.status(400).json({ error: 'Email y contraseña requeridos' });
         }
         
-        // Buscar usuario por email SIN filtrar por municipio primero
+        // PRIMERO: Buscar el usuario SOLO por email (sin municipio)
         const query = `
             SELECT u.*, m.id as municipio_id, m.nombre as municipio_nombre, m.slug as municipio_slug
             FROM usuarios u
             JOIN municipios m ON u.municipio_id = m.id
-            WHERE u.email = $1 AND u.activo = true
+            WHERE u.email = $1
         `;
         
-        console.log('🔍 Query:', query);
-        console.log('🔍 Email:', email);
-        
+        console.log('🔍 Buscando usuario con email:', email);
         const result = await pool.query(query, [email]);
-        console.log('🔍 Resultados encontrados:', result.rows.length);
+        
+        console.log(`🔍 Resultados encontrados: ${result.rows.length}`);
         
         if (result.rows.length === 0) {
-            console.log('❌ Usuario no encontrado para email:', email);
+            console.log('❌ USUARIO NO ENCONTRADO');
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
         
         const user = result.rows[0];
-        console.log('✅ Usuario encontrado:', user.email);
-        console.log('🔍 Municipio del usuario:', user.municipio_slug);
+        console.log('✅ Usuario encontrado:');
+        console.log('   - Email:', user.email);
+        console.log('   - Municipio:', user.municipio_slug);
+        console.log('   - Rol:', user.rol);
+        console.log('   - Activo:', user.activo);
         
-        // Si se especificó municipio, verificar que coincida
+        // Verificar si el usuario está activo
+        if (!user.activo) {
+            console.log('❌ Usuario inactivo');
+            return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+        
+        // Verificar municipio (si se envió)
         if (municipio_slug && user.municipio_slug !== municipio_slug) {
-            console.log('❌ Municipio no coincide. Esperado:', municipio_slug, 'Real:', user.municipio_slug);
+            console.log(`❌ Municipio no coincide. Esperado: ${municipio_slug}, Real: ${user.municipio_slug}`);
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
         
         // Verificar contraseña
+        console.log('🔍 Verificando contraseña...');
         const validPassword = await bcrypt.compare(password, user.password_hash);
-        console.log('🔍 Contraseña válida?', validPassword);
+        console.log(`🔍 Contraseña válida: ${validPassword}`);
         
         if (!validPassword) {
-            console.log('❌ Contraseña incorrecta');
+            console.log('❌ CONTRASEÑA INCORRECTA');
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
         
@@ -86,7 +98,8 @@ router.post('/login', async (req, res) => {
             { expiresIn: '8h' }
         );
         
-        console.log('✅ Login exitoso para:', user.email);
+        console.log('✅ LOGIN EXITOSO para:', user.email);
+        console.log('========================================');
         
         res.json({
             success: true,
@@ -105,9 +118,9 @@ router.post('/login', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('❌ Error en login:', error);
-        console.error('❌ Stack:', error.stack);
-        res.status(500).json({ error: 'Error interno del servidor: ' + error.message });
+        console.error('❌ ERROR EN LOGIN:', error);
+        console.error('Stack:', error.stack);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 
