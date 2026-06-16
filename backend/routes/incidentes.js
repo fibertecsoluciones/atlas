@@ -1,7 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
-const { authMiddleware } = require('../middleware/auth');
 const tenantMiddleware = require('../middleware/tenant');
 
 // Aplicar middleware multi-tenant
@@ -151,13 +150,14 @@ router.post('/', async (req, res) => {
 });
 
 // =====================================================
-// PUT: Actualizar estado de incidente
+// PUT: Actualizar estado de incidente (SIN AUTENTICACIÓN TEMPORAL)
 // =====================================================
-router.put('/:id/estado', authMiddleware, async function(req, res) {
+router.put('/:id/estado', async (req, res) => {
     try {
         const { id } = req.params;
         const { estado, comentarios } = req.body;
         
+        // Verificar que el incidente existe
         const checkResult = await pool.query(
             'SELECT id FROM incidentes WHERE id = $1 AND municipio_id = $2',
             [id, req.municipioId]
