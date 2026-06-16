@@ -4,72 +4,75 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 
-// =====================================================
-// GET: Listar municipios (público)
-// =====================================================
-// GET: Listar municipios (público) - VERSIÓN SIMPLIFICADA
+// GET: Listar municipios
 router.get('/municipios', async (req, res) => {
     try {
         console.log('🔍 Obteniendo municipios...');
-        console.log('DATABASE_URL existe:', !!process.env.DATABASE_URL);
-        
-        const pool = require('../config/database');
-        
-        // Query simple
         const result = await pool.query('SELECT id, nombre, slug FROM municipios WHERE activo = true OR activo IS NULL');
-        
         console.log(`✅ Encontrados ${result.rows.length} municipios`);
-        
         res.json(result.rows);
-        
     } catch (error) {
         console.error('❌ Error en /municipios:', error.message);
-        console.error('Detalle:', error);
-        
-        // Devolver array vacío en lugar de error 500 para no romper el frontend
         res.status(200).json([]);
     }
 });
 
-// =====================================================
-// POST: Login
-// =====================================================
+// POST: Login (VERSIÓN SIMPLIFICADA Y CORREGIDA)
 router.post('/login', async (req, res) => {
     try {
         const { email, password, municipio_slug } = req.body;
         
+        console.log('🔍 ===== INTENTO DE LOGIN =====');
+        console.log('📧 Email:', email);
+        console.log('🏛️ Municipio slug:', municipio_slug);
+        
         if (!email || !password) {
+            console.log('❌ Email o password faltante');
             return res.status(400).json({ error: 'Email y contraseña requeridos' });
         }
         
-        let query = `
+        // Buscar usuario por email SIN filtrar por municipio primero
+        const query = `
             SELECT u.*, m.id as municipio_id, m.nombre as municipio_nombre, m.slug as municipio_slug
             FROM usuarios u
             JOIN municipios m ON u.municipio_id = m.id
             WHERE u.email = $1 AND u.activo = true
         `;
-        let params = [email];
         
-        if (municipio_slug) {
-            query += ` AND m.slug = $2`;
-            params.push(municipio_slug);
-        }
+        console.log('🔍 Query:', query);
+        console.log('🔍 Email:', email);
         
-        const result = await pool.query(query, params);
+        const result = await pool.query(query, [email]);
+        console.log('🔍 Resultados encontrados:', result.rows.length);
         
         if (result.rows.length === 0) {
+            console.log('❌ Usuario no encontrado para email:', email);
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
         
         const user = result.rows[0];
+        console.log('✅ Usuario encontrado:', user.email);
+        console.log('🔍 Municipio del usuario:', user.municipio_slug);
         
-        const validPassword = await bcrypt.compare(password, user.password_hash);
-        if (!validPassword) {
+        // Si se especificó municipio, verificar que coincida
+        if (municipio_slug && user.municipio_slug !== municipio_slug) {
+            console.log('❌ Municipio no coincide. Esperado:', municipio_slug, 'Real:', user.municipio_slug);
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
         
+        // Verificar contraseña
+        const validPassword = await bcrypt.compare(password, user.password_hash);
+        console.log('🔍 Contraseña válida?', validPassword);
+        
+        if (!validPassword) {
+            console.log('❌ Contraseña incorrecta');
+            return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+        
+        // Actualizar último acceso
         await pool.query('UPDATE usuarios SET ultimo_acceso = NOW() WHERE id = $1', [user.id]);
         
+        // Generar token JWT
         const token = jwt.sign(
             {
                 id: user.id,
@@ -82,6 +85,8 @@ router.post('/login', async (req, res) => {
             process.env.JWT_SECRET || 'secreto-temporal',
             { expiresIn: '8h' }
         );
+        
+        console.log('✅ Login exitoso para:', user.email);
         
         res.json({
             success: true,
@@ -100,8 +105,9 @@ router.post('/login', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Error en login:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        console.error('❌ Error en login:', error);
+        console.error('❌ Stack:', error.stack);
+        res.status(500).json({ error: 'Error interno del servidor: ' + error.message });
     }
 });
 
