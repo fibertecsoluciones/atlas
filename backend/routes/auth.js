@@ -17,7 +17,7 @@ router.get('/municipios', async (req, res) => {
     }
 });
 
-// POST: Login - VERSIÓN DEFINITIVA
+// POST: Login - CON PRUEBA DIRECTA DE BCRYPT
 router.post('/login', async (req, res) => {
     try {
         const { email, password, municipio_slug } = req.body;
@@ -26,7 +26,6 @@ router.post('/login', async (req, res) => {
         console.log('🔍 NUEVO INTENTO DE LOGIN');
         console.log('📧 Email recibido:', email);
         console.log('🏛️ Municipio recibido:', municipio_slug);
-        console.log('🔑 Password recibida:', password ? '***' : 'NO');
         console.log('========================================');
         
         if (!email || !password) {
@@ -34,7 +33,7 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Email y contraseña requeridos' });
         }
         
-        // PRIMERO: Buscar el usuario SOLO por email (sin municipio)
+        // Buscar usuario
         const query = `
             SELECT u.*, m.id as municipio_id, m.nombre as municipio_nombre, m.slug as municipio_slug
             FROM usuarios u
@@ -45,46 +44,43 @@ router.post('/login', async (req, res) => {
         console.log('🔍 Buscando usuario con email:', email);
         const result = await pool.query(query, [email]);
         
-        console.log(`🔍 Resultados encontrados: ${result.rows.length}`);
-        
         if (result.rows.length === 0) {
-            console.log('❌ USUARIO NO ENCONTRADO');
+            console.log('❌ Usuario no encontrado');
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
         
         const user = result.rows[0];
-        console.log('✅ Usuario encontrado:');
-        console.log('   - Email:', user.email);
-        console.log('   - Municipio:', user.municipio_slug);
-        console.log('   - Rol:', user.rol);
-        console.log('   - Activo:', user.activo);
+        console.log('✅ Usuario encontrado:', user.email);
+        console.log('🔍 Hash almacenado:', user.password_hash);
+        console.log('🔍 Longitud del hash:', user.password_hash.length);
         
-        // Verificar si el usuario está activo
-        if (!user.activo) {
-            console.log('❌ Usuario inactivo');
-            return res.status(401).json({ error: 'Credenciales inválidas' });
+        // VERIFICAR CONTRASEÑA CON BCRYPT DIRECTAMENTE
+        console.log('🔍 Verificando contraseña con bcrypt.compare...');
+        
+        let validPassword = false;
+        try {
+            validPassword = await bcrypt.compare(password, user.password_hash);
+            console.log(`🔍 Resultado de bcrypt.compare: ${validPassword}`);
+        } catch (bcryptError) {
+            console.error('❌ Error en bcrypt.compare:', bcryptError.message);
+            return res.status(500).json({ error: 'Error al verificar la contraseña' });
         }
-        
-        // Verificar municipio (si se envió)
-        if (municipio_slug && user.municipio_slug !== municipio_slug) {
-            console.log(`❌ Municipio no coincide. Esperado: ${municipio_slug}, Real: ${user.municipio_slug}`);
-            return res.status(401).json({ error: 'Credenciales inválidas' });
-        }
-        
-        // Verificar contraseña
-        console.log('🔍 Verificando contraseña...');
-        const validPassword = await bcrypt.compare(password, user.password_hash);
-        console.log(`🔍 Contraseña válida: ${validPassword}`);
         
         if (!validPassword) {
-            console.log('❌ CONTRASEÑA INCORRECTA');
+            console.log('❌ Contraseña incorrecta');
+            return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+        
+        // Verificar municipio
+        if (municipio_slug && user.municipio_slug !== municipio_slug) {
+            console.log(`❌ Municipio no coincide. Esperado: ${municipio_slug}, Real: ${user.municipio_slug}`);
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
         
         // Actualizar último acceso
         await pool.query('UPDATE usuarios SET ultimo_acceso = NOW() WHERE id = $1', [user.id]);
         
-        // Generar token JWT
+        // Generar token
         const token = jwt.sign(
             {
                 id: user.id,
