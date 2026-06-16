@@ -36,7 +36,7 @@
     </div>
     
     <div class="container">
-        <div id="mapa"></div>
+        <div id="mapa-google" style="height: 100%; width: 100%;"></div>
         <div class="incidentes-panel">
             <h3>📋 Incidentes Recientes</h3>
             <div id="lista-incidentes">
@@ -45,6 +45,7 @@
         </div>
     </div>
     
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJ2MbvqJnEcImXVD7KNVmIvU5kQ1iMcuQ&callback=iniciarMapaDashboard&libraries=drawing,geometry" async defer></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="/js/config.js"></script>
     <script src="/js/api.js"></script>

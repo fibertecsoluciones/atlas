@@ -180,8 +180,12 @@ municipioSelector.addEventListener('change', (e) => {
 // INICIALIZAR
 // =====================================================
 function init() {
-    // Inicializar mapa
-    mapaManager.init();
+    // Verificar que Google Maps está cargado
+    if (typeof google === 'undefined') {
+        console.log('Esperando Google Maps...');
+        setTimeout(init, 1000);
+        return;
+    }
     
     // Cargar municipios
     cargarMunicipios();
@@ -190,16 +194,15 @@ function init() {
     initTiposEmergencia();
     
     // Evento del botón enviar
-    btnEnviar.addEventListener('click', enviarReporte);
+    document.getElementById('btn-enviar').addEventListener('click', enviarReporte);
     
-    // Intentar obtener ubicación actual para centrar el mapa
-    mapaManager.obtenerUbicacionActual()
-        .then(ubicacion => {
-            mapaManager.cambiarCentro(ubicacion.lat, ubicacion.lng, 15);
-        })
-        .catch(error => {
-            console.log('No se pudo obtener ubicación:', error);
-        });
+    // Cuando el mapa esté listo, cargar capas
+    window.onMapaIniciado = function() {
+        // Cargar albergues y zonas de riesgo en el mapa
+        if (typeof cargarCapasMapa === 'function') {
+            cargarCapasMapa();
+        }
+    };
 }
 
 // Iniciar cuando el DOM esté listo

@@ -1,5 +1,5 @@
 // =====================================================
-// DASHBOARD - SISTEMA ATLAS SAS
+// DASHBOARD - SISTEMA ATLAS SAS (GOOGLE MAPS)
 // =====================================================
 
 // Referencias DOM
@@ -12,7 +12,9 @@ const listaIncidentes = document.getElementById('lista-incidentes');
 
 // Estado
 let mapa;
+let infoWindow;
 let marcadores = [];
+let poligonos = [];
 let incidentesData = [];
 let userData = null;
 
@@ -32,16 +34,24 @@ function obtenerUsuario() {
 }
 
 // =====================================================
-// INICIALIZAR MAPA
+// INICIALIZAR MAPA (GOOGLE MAPS)
 // =====================================================
 function initMapaDashboard() {
-    mapa = L.map('mapa').setView([17.9117, -94.0958], 13);
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const slug = user.municipio?.slug || 'las-choapas';
+    const centro = CENTROS_MUNICIPIOS[slug] || DEFAULT_CENTER;
     
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap'
-    }).addTo(mapa);
+    mapa = new google.maps.Map(document.getElementById('mapa-google'), {
+        center: { lat: centro.lat, lng: centro.lng },
+        zoom: centro.zoom || 13,
+        mapTypeId: 'roadmap',
+        streetViewControl: true,
+        fullscreenControl: true
+    });
     
-    return mapa;
+    infoWindow = new google.maps.InfoWindow();
+    marcadores = [];
+    poligonos = [];
 }
 
 // =====================================================
@@ -56,9 +66,11 @@ async function cargarIncidentes() {
         // Actualizar estadísticas
         const activos = incidentesData.filter(i => i.estado !== 'resuelto').length;
         const enProceso = incidentesData.filter(i => i.estado === 'en_proceso').length;
+        const resueltos = incidentesData.filter(i => i.estado === 'resuelto').length;
         
         if (statsActivos) statsActivos.innerText = activos;
         if (statsProceso) statsProceso.innerText = enProceso;
+        if (statsResueltos) statsResueltos.innerText = resueltos;
         
         // Actualizar lista
         actualizarListaIncidentes();
@@ -95,13 +107,13 @@ function actualizarListaIncidentes() {
 }
 
 // =====================================================
-// ACTUALIZAR MAPA CON MARCADORES
+// ACTUALIZAR MAPA CON MARCADORES (GOOGLE MAPS)
 // =====================================================
 function actualizarMapaIncidentes() {
     if (!mapa) return;
     
     // Limpiar marcadores existentes
-    marcadores.forEach(m => mapa.removeLayer(m));
+    marcadores.forEach(m => m.setMap(null));
     marcadores = [];
     
     incidentesData.forEach(inc => {
@@ -109,23 +121,43 @@ function actualizarMapaIncidentes() {
         if (inc.prioridad === 2) color = '#f59e0b';
         if (inc.prioridad === 3) color = '#10b981';
         
-        const icono = L.divIcon({
-            html: `<div style="background: ${color}; width: 28px; height: 28px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px black; text-align: center; line-height: 28px; color: white; font-weight: bold;">${inc.es_nuevo === 'nuevo' ? '‼️' : '!'}</div>`,
-            className: 'marcador-incidente',
-            iconSize: [28, 28]
+        // Crear marcador de Google Maps
+        const marker = new google.maps.Marker({
+            position: { lat: inc.latitud, lng: inc.longitud },
+            map: mapa,
+            icon: {
+                path: google.maps.SymbolPath.CIRCLE,
+                fillColor: color,
+                fillOpacity: 0.9,
+                strokeColor: 'white',
+                strokeWeight: 2,
+                scale: 14
+            },
+            title: inc.tipo
         });
         
-        const marcador = L.marker([inc.latitud, inc.longitud], { icon: icono })
-            .addTo(mapa)
-            .bindPopup(`
-                <b>${inc.tipo.toUpperCase()}</b><br>
-                ${inc.descripcion || 'Sin descripción'}<br>
-                <small>${formatFecha(inc.fecha_reporte)}</small><br>
-                <button onclick="cambiarEstadoIncidente(${inc.id}, 'en_proceso')">🔄 Marcar en proceso</button>
-                <button onclick="cambiarEstadoIncidente(${inc.id}, 'resuelto')">✅ Marcar resuelto</button>
-            `);
+        // Contenido del popup
+        const content = `
+            <div style="padding: 10px; max-width: 250px;">
+                <h3 style="margin: 0 0 8px 0; color: #1e3a8a;">🚨 ${inc.tipo.toUpperCase()}</h3>
+                <p><strong>Estado:</strong> ${getEstadoTexto(inc.estado)}</p>
+                <p><strong>Prioridad:</strong> ${inc.prioridad === 1 ? 'Alta' : inc.prioridad === 2 ? 'Media' : 'Baja'}</p>
+                <p>${inc.descripcion || 'Sin descripción'}</p>
+                <p><small>${formatFecha(inc.fecha_reporte)}</small></p>
+                ${inc.es_nuevo === 'nuevo' ? '<p style="color: #dc2626; font-weight: bold;">‼️ NUEVO</p>' : ''}
+                <div style="margin-top: 10px;">
+                    <button onclick="cambiarEstadoIncidente(${inc.id}, 'en_proceso')" style="background: #f59e0b; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 3px;">🔄 En proceso</button>
+                    <button onclick="cambiarEstadoIncidente(${inc.id}, 'resuelto')" style="background: #10b981; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin: 3px;">✅ Resuelto</button>
+                </div>
+            </div>
+        `;
         
-        marcadores.push(marcador);
+        marker.addListener('click', () => {
+            infoWindow.setContent(content);
+            infoWindow.open(mapa, marker);
+        });
+        
+        marcadores.push(marker);
     });
 }
 
@@ -134,7 +166,8 @@ function actualizarMapaIncidentes() {
 // =====================================================
 function centrarEnIncidente(lat, lng) {
     if (mapa) {
-        mapa.setView([lat, lng], 16);
+        mapa.setCenter({ lat, lng });
+        mapa.setZoom(16);
     }
 }
 
@@ -159,7 +192,7 @@ async function cambiarEstadoIncidente(id, nuevoEstado) {
 }
 
 // =====================================================
-// CARGAR ALBERGUES EN EL MAPA
+// CARGAR ALBERGUES EN EL MAPA (GOOGLE MAPS)
 // =====================================================
 async function cargarAlbergues() {
     if (!userData?.municipio?.slug) return;
@@ -170,28 +203,100 @@ async function cargarAlbergues() {
         if (statsAlbergues) statsAlbergues.innerText = albergues.length;
         
         albergues.forEach(alb => {
-            let color = '#10b981';
-            if (alb.color_estado === 'rojo') color = '#ef4444';
-            else if (alb.color_estado === 'naranja') color = '#f59e0b';
-            else if (alb.color_estado === 'amarillo') color = '#eab308';
-            
-            const icono = L.divIcon({
-                html: `<div style="background: ${color}; width: 24px; height: 24px; border-radius: 50%; text-align: center; line-height: 24px; color: white;">🏠</div>`,
-                className: 'marcador-albergue'
+            // Crear marcador de Google Maps
+            const marker = new google.maps.Marker({
+                position: { lat: alb.latitud, lng: alb.longitud },
+                map: mapa,
+                icon: {
+                    url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+                    scaledSize: new google.maps.Size(32, 32)
+                },
+                title: alb.nombre
             });
             
-            L.marker([alb.latitud, alb.longitud], { icon: icono })
-                .addTo(mapa)
-                .bindPopup(`
-                    <b>🏠 ${alb.nombre}</b><br>
-                    Capacidad: ${alb.ocupacion_actual}/${alb.capacidad_total}<br>
-                    Encargado: ${alb.encargado_nombre || 'No registrado'}<br>
-                    Tel: ${alb.encargado_telefono || 'N/A'}
-                `);
+            const ocupacion = alb.capacidad_total > 0 
+                ? Math.round((alb.ocupacion_actual / alb.capacidad_total) * 100)
+                : 0;
+            
+            let estadoColor = '';
+            if (ocupacion >= 100) estadoColor = '🔴 LLENO';
+            else if (ocupacion >= 80) estadoColor = '🟠 ALTO';
+            else if (ocupacion >= 50) estadoColor = '🟡 MEDIO';
+            else estadoColor = '🟢 DISPONIBLE';
+            
+            const content = `
+                <div style="padding: 10px; max-width: 250px;">
+                    <h3 style="margin: 0 0 8px 0; color: #1e3a8a;">🏠 ${alb.nombre}</h3>
+                    <p><strong>Capacidad:</strong> ${alb.ocupacion_actual}/${alb.capacidad_total}</p>
+                    <p><strong>Ocupación:</strong> ${ocupacion}% ${estadoColor}</p>
+                    <p><strong>Encargado:</strong> ${alb.encargado_nombre || 'No registrado'}</p>
+                    <p><strong>Teléfono:</strong> ${alb.encargado_telefono || 'N/A'}</p>
+                    <p><strong>Servicios:</strong> ${alb.servicios?.join(', ') || 'No especificados'}</p>
+                </div>
+            `;
+            
+            marker.addListener('click', () => {
+                infoWindow.setContent(content);
+                infoWindow.open(mapa, marker);
+            });
+            
+            marcadores.push(marker);
         });
         
     } catch (error) {
         console.error('Error cargando albergues:', error);
+    }
+}
+
+// =====================================================
+// CARGAR ZONAS DE RIESGO (GOOGLE MAPS POLYGONS)
+// =====================================================
+async function cargarZonasRiesgo() {
+    if (!userData?.municipio?.slug) return;
+    
+    try {
+        const response = await fetch(`/api/zonas`, {
+            headers: { 'X-Municipio-Slug': userData.municipio.slug }
+        });
+        const zonas = await response.json();
+        
+        zonas.forEach(zona => {
+            const geojson = JSON.parse(zona.coordenadas_poligono);
+            
+            let color = '#ef4444';
+            if (zona.nivel === 'medio') color = '#f59e0b';
+            if (zona.nivel === 'bajo') color = '#10b981';
+            
+            const polygon = new google.maps.Polygon({
+                paths: geojson.coordinates[0].map(c => ({ lat: c[1], lng: c[0] })),
+                strokeColor: color,
+                strokeOpacity: 0.8,
+                strokeWeight: 2,
+                fillColor: color,
+                fillOpacity: 0.3,
+                map: mapa
+            });
+            
+            const content = `
+                <div style="padding: 10px;">
+                    <h3 style="margin: 0 0 8px 0; color: #1e3a8a;">⚠️ ${zona.nombre}</h3>
+                    <p><strong>Tipo:</strong> ${zona.tipo}</p>
+                    <p><strong>Nivel:</strong> ${zona.nivel.toUpperCase()}</p>
+                    <p>${zona.descripcion || ''}</p>
+                </div>
+            `;
+            
+            polygon.addListener('click', (event) => {
+                infoWindow.setPosition(event.latLng);
+                infoWindow.setContent(content);
+                infoWindow.open(mapa);
+            });
+            
+            poligonos.push(polygon);
+        });
+        
+    } catch (error) {
+        console.error('Error cargando zonas de riesgo:', error);
     }
 }
 
@@ -213,12 +318,13 @@ async function initDashboard() {
     const user = obtenerUsuario();
     if (!user) return;
     
-    // Inicializar mapa
+    // Inicializar mapa (Google Maps)
     initMapaDashboard();
     
     // Cargar datos
     await cargarIncidentes();
     await cargarAlbergues();
+    await cargarZonasRiesgo();
     
     // Recargar cada 30 segundos
     setInterval(() => {
@@ -227,4 +333,5 @@ async function initDashboard() {
     }, 30000);
 }
 
+// Esperar a que Google Maps cargue
 document.addEventListener('DOMContentLoaded', initDashboard);

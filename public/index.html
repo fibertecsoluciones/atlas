@@ -5,11 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <title>Protección Civil - Reporte de Emergencias</title>
     
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    
-    <!-- Estilos propios -->
+    <!-- Google Maps CSS -->
     <link rel="stylesheet" href="/css/style.css">
+    
+    <style>
+        /* Estilos específicos para el mapa */
+        #mapa-google {
+            height: 100%;
+            width: 100%;
+            min-height: 500px;
+        }
+        
+        .map-container {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .info-marcador {
+            padding: 10px;
+            max-width: 280px;
+        }
+        
+        .info-marcador h3 { margin: 0 0 8px 0; color: #1e3a8a; }
+        .info-marcador p { margin: 5px 0; font-size: 13px; }
+        .info-marcador .foto { max-width: 100%; border-radius: 8px; margin-top: 8px; }
+        
+        .btn-ubicacion {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            z-index: 1000;
+            background: white;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+        }
+        
+        .btn-ubicacion:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+    </style>
 </head>
 <body>
     <div class="header">
@@ -23,7 +67,12 @@
     </div>
     
     <div class="container">
-        <div id="mapa"></div>
+        <div class="map-section" style="position: relative; height: 100%;">
+            <div id="mapa-google" class="map-container"></div>
+            <button class="btn-ubicacion" onclick="centrarEnUbicacion()" title="Mi ubicación">
+                📍
+            </button>
+        </div>
         
         <div class="form-panel">
             <h2>📝 Reportar Emergencia</h2>
@@ -93,8 +142,8 @@
         </div>
     </div>
     
-    <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Google Maps API -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBJ2MbvqJnEcImXVD7KNVmIvU5kQ1iMcuQ&callback=iniciarMapa&libraries=drawing,geometry" async defer></script>
     
     <!-- Scripts propios -->
     <script src="/js/config.js"></script>
