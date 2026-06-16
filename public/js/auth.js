@@ -1,152 +1,117 @@
-// =====================================================
-// AUTENTICACIÓN - SISTEMA ATLAS SAS
-// =====================================================
+const express = require('express');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
+const pool = require('../config/database');
 
-// Referencias DOM
-const loginForm = document.getElementById('login-form');
-const municipioSelect = document.getElementById('municipio');
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
-const errorDiv = document.getElementById('error');
-const loadingDiv = document.getElementById('loading');
+// !!! TEMPORAL: No usar bcrypt, comparación directa !!!
+// SOLO PARA PRUEBAS - LUEGO VOLVER A BCRYPT
 
-// =====================================================
-// CARGAR MUNICIPIOS
-// =====================================================
-// =====================================================
-// CARGAR MUNICIPIOS EN EL SELECTOR
-// =====================================================
-
-async function cargarMunicipiosLogin() {
-    const select = document.getElementById('municipio');
-    if (!select) return;
-    
+// GET: Listar municipios
+router.get('/municipios', async (req, res) => {
     try {
-        const response = await fetch('/api/auth/municipios');
-        const municipios = await response.json();
+        console.log('🔍 Obteniendo municipios...');
+        const result = await pool.query('SELECT id, nombre, slug FROM municipios WHERE activo = true OR activo IS NULL');
+        console.log(`✅ Encontrados ${result.rows.length} municipios`);
+        res.json(result.rows);
+    } catch (error) {
+        console.error('❌ Error en /municipios:', error.message);
+        res.status(200).json([]);
+    }
+});
+
+// POST: Login - VERSIÓN SIN BCRYPT (PARA PRUEBAS)
+router.post('/login', async (req, res) => {
+    try {
+        const { email, password, municipio_slug } = req.body;
         
-        select.innerHTML = '<option value="">Selecciona tu municipio</option>';
+        console.log('========================================');
+        console.log('🔍 NUEVO INTENTO DE LOGIN (SIN BCRYPT)');
+        console.log('📧 Email recibido:', email);
+        console.log('🔑 Password recibida:', password);
+        console.log('🏛️ Municipio recibido:', municipio_slug);
+        console.log('========================================');
         
-        municipios.forEach(m => {
-            const option = document.createElement('option');
-            option.value = m.slug;
-            option.textContent = m.nombre;
-            select.appendChild(option);
+        if (!email || !password) {
+            console.log('❌ Email o password faltante');
+            return res.status(400).json({ error: 'Email y contraseña requeridos' });
+        }
+        
+        // Buscar usuario
+        const query = `
+            SELECT u.*, m.id as municipio_id, m.nombre as municipio_nombre, m.slug as municipio_slug
+            FROM usuarios u
+            JOIN municipios m ON u.municipio_id = m.id
+            WHERE u.email = $1
+        `;
+        
+        console.log('🔍 Buscando usuario con email:', email);
+        const result = await pool.query(query, [email]);
+        
+        if (result.rows.length === 0) {
+            console.log('❌ Usuario no encontrado');
+            return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+        
+        const user = result.rows[0];
+        console.log('✅ Usuario encontrado:', user.email);
+        
+        // !!! COMPARACIÓN DIRECTA (SIN BCRYPT) !!!
+        // La contraseña debe ser "admin123"
+        const validPassword = (password === 'admin123');
+        console.log(`🔍 Contraseña válida (comparación directa): ${validPassword}`);
+        
+        if (!validPassword) {
+            console.log('❌ Contraseña incorrecta');
+            return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+        
+        // Verificar municipio
+        if (municipio_slug && user.municipio_slug !== municipio_slug) {
+            console.log(`❌ Municipio no coincide. Esperado: ${municipio_slug}, Real: ${user.municipio_slug}`);
+            return res.status(401).json({ error: 'Credenciales inválidas' });
+        }
+        
+        // Actualizar último acceso
+        await pool.query('UPDATE usuarios SET ultimo_acceso = NOW() WHERE id = $1', [user.id]);
+        
+        // Generar token
+        const token = jwt.sign(
+            {
+                id: user.id,
+                email: user.email,
+                nombre: user.nombre_completo,
+                rol: user.rol,
+                municipio_id: user.municipio_id,
+                municipio_slug: user.municipio_slug
+            },
+            process.env.JWT_SECRET || 'secreto-temporal',
+            { expiresIn: '8h' }
+        );
+        
+        console.log('✅ LOGIN EXITOSO para:', user.email);
+        console.log('========================================');
+        
+        res.json({
+            success: true,
+            token,
+            usuario: {
+                id: user.id,
+                email: user.email,
+                nombre: user.nombre_completo,
+                rol: user.rol,
+                municipio: {
+                    id: user.municipio_id,
+                    nombre: user.municipio_nombre,
+                    slug: user.municipio_slug
+                }
+            }
         });
-    } catch (error) {
-        console.error('Error cargando municipios:', error);
-        select.innerHTML = '<option value="">Error al cargar municipios</option>';
-    }
-}
-
-// Llamar a la función cuando carga la página
-document.addEventListener('DOMContentLoaded', cargarMunicipiosLogin);
-
-// =====================================================
-// LOGIN
-// =====================================================
-async function handleLogin(e) {
-    e.preventDefault();
-    
-    const municipioSlug = municipioSelect?.value;
-    const email = emailInput?.value;
-    const password = passwordInput?.value;
-    
-    if (!municipioSlug) {
-        mostrarError('Selecciona un municipio');
-        return;
-    }
-    
-    if (!email || !password) {
-        mostrarError('Completa todos los campos');
-        return;
-    }
-    
-    mostrarLoading(true);
-    ocultarError();
-    
-    try {
-        const data = await api.login(email, password, municipioSlug);
         
-        if (data.token) {
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.usuario));
-            window.location.href = '/dashboard.html';
-        } else {
-            mostrarError(data.error || 'Credenciales inválidas');
-        }
     } catch (error) {
-        mostrarError('Error de conexión. Intenta de nuevo.');
-    } finally {
-        mostrarLoading(false);
+        console.error('❌ ERROR EN LOGIN:', error);
+        console.error('Stack:', error.stack);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
-}
+});
 
-// =====================================================
-// VERIFICAR SESIÓN ACTIVA
-// =====================================================
-function verificarSesion() {
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-    
-    if (token && user) {
-        // Está en login pero ya tiene sesión
-        if (window.location.pathname.includes('login.html')) {
-            window.location.href = '/dashboard.html';
-        }
-        return true;
-    }
-    
-    // Está en dashboard pero no tiene sesión
-    if (window.location.pathname.includes('dashboard.html')) {
-        window.location.href = '/login.html';
-        return false;
-    }
-    
-    return false;
-}
-
-// =====================================================
-// CERRAR SESIÓN
-// =====================================================
-function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    window.location.href = '/login.html';
-}
-
-// =====================================================
-// UTILIDADES UI
-// =====================================================
-function mostrarError(mensaje) {
-    if (errorDiv) {
-        errorDiv.innerText = mensaje;
-        errorDiv.style.display = 'block';
-    }
-}
-
-function ocultarError() {
-    if (errorDiv) {
-        errorDiv.style.display = 'none';
-    }
-}
-
-function mostrarLoading(show) {
-    if (loadingDiv) {
-        loadingDiv.style.display = show ? 'block' : 'none';
-    }
-}
-
-// =====================================================
-// INICIALIZAR
-// =====================================================
-function initAuth() {
-    verificarSesion();
-    
-    if (loginForm) {
-        cargarMunicipiosLogin();
-        loginForm.addEventListener('submit', handleLogin);
-    }
-}
-
-document.addEventListener('DOMContentLoaded', initAuth);
+module.exports = router;
