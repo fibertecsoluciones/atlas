@@ -1,0 +1,223 @@
+/* =============================================
+   ESTILOS PARA INDEX (Reporte Ciudadano)
+   ============================================= */
+
+/* ===== CONTENEDOR PRINCIPAL ===== */
+.container {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    height: calc(100vh - 80px);
+    gap: 0;
+}
+
+/* ===== MAPA ===== */
+.map-section {
+    position: relative;
+    height: 100%;
+    background: #e8ecf1;
+}
+
+#mapa-principal {
+    height: 100%;
+    width: 100%;
+    min-height: 500px;
+}
+
+.map-container {
+    height: 100%;
+    width: 100%;
+}
+
+/* ===== BOTÓN MI UBICACIÓN ===== */
+.btn-ubicacion {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    z-index: 1000;
+    background: white;
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    cursor: pointer;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.btn-ubicacion:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* ===== FORMULARIO ===== */
+.form-panel {
+    background: white;
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+}
+
+.form-panel h2 {
+    color: #1e3a8a;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #dc2626;
+    padding-bottom: 10px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+    font-size: 0.9rem;
+}
+
+.form-group select,
+.form-group textarea,
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.form-group select:focus,
+.form-group textarea:focus,
+.form-group input:focus {
+    outline: none;
+    border-color: #dc2626;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* ===== TIPOS DE EMERGENCIA ===== */
+.tipos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.tipo-card {
+    text-align: center;
+    padding: 10px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tipo-card:hover {
+    border-color: #dc2626;
+    background: #fee2e2;
+}
+
+.tipo-card.seleccionado {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+
+.tipo-card span {
+    font-size: 28px;
+    display: block;
+}
+
+.tipo-card small {
+    font-size: 0.7rem;
+}
+
+/* ===== UBICACIÓN INFO ===== */
+.ubicacion-info {
+    background: #e0f2fe;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-size: 0.9rem;
+}
+
+/* ===== BOTÓN ENVIAR ===== */
+.btn-enviar {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.2s;
+}
+
+.btn-enviar:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+.btn-enviar:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* ===== MENSAJES ===== */
+.loading {
+    display: none;
+    text-align: center;
+    padding: 10px;
+    color: #dc2626;
+}
+
+.success {
+    background: #10b981;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: none;
+}
+
+.error {
+    background: #ef4444;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: none;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    .map-section {
+        height: 400px;
+    }
+    
+    #mapa-principal {
+        min-height: 300px;
+    }
+    
+    .form-panel {
+        max-height: 500px;
+    }
+    
+    .tipos-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

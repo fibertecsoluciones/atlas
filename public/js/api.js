@@ -7,28 +7,15 @@ class APIClient {
         this.baseUrl = API_BASE_URL;
     }
     
-    // Obtener headers (con token si existe)
     getHeaders(municipioSlug = null) {
-        const headers = {
-            'Content-Type': 'application/json'
-        };
-        
+        const headers = { 'Content-Type': 'application/json' };
         const token = localStorage.getItem('token');
-        if (token) {
-            headers['Authorization'] = `Bearer ${token}`;
-        }
-        
-        if (municipioSlug) {
-            headers['X-Municipio-Slug'] = municipioSlug;
-        }
-        
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (municipioSlug) headers['X-Municipio-Slug'] = municipioSlug;
         return headers;
     }
     
-    // =====================================================
-    // INCIDENTES
-    // =====================================================
-    
+    // Incidentes
     async reportarIncidente(datos, municipioSlug) {
         const response = await fetch(`${this.baseUrl}/api/incidentes`, {
             method: 'POST',
@@ -54,10 +41,7 @@ class APIClient {
         return response.json();
     }
     
-    // =====================================================
-    // ALBERGUES
-    // =====================================================
-    
+    // Albergues
     async obtenerAlbergues(municipioSlug) {
         const response = await fetch(`${this.baseUrl}/api/albergues/mapa`, {
             headers: this.getHeaders(municipioSlug)
@@ -65,10 +49,7 @@ class APIClient {
         return response.json();
     }
     
-    // =====================================================
-    // ZONAS DE RIESGO
-    // =====================================================
-    
+    // Zonas de riesgo
     async obtenerZonasRiesgo(municipioSlug) {
         const response = await fetch(`${this.baseUrl}/api/zonas`, {
             headers: this.getHeaders(municipioSlug)
@@ -76,10 +57,7 @@ class APIClient {
         return response.json();
     }
     
-    // =====================================================
-    // AUTENTICACIÓN
-    // =====================================================
-    
+    // Autenticación
     async login(email, password, municipioSlug) {
         const response = await fetch(`${this.baseUrl}/api/auth/login`, {
             method: 'POST',
@@ -95,5 +73,4 @@ class APIClient {
     }
 }
 
-// Instancia global
 const api = new APIClient();

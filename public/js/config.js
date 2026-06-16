@@ -5,16 +5,19 @@
 // URL base de la API
 const API_BASE_URL = window.location.origin;
 
-// Centros por municipio (coordenadas predefinidas)
+// Centros por municipio
 const CENTROS_MUNICIPIOS = {
     'las-choapas': { lat: 17.9117, lng: -94.0958, zoom: 13 },
-    'moloacan': { lat: 17.9842, lng: -94.3467, zoom: 14 }
+    'moloacan': { lat: 17.9842, lng: -94.3467, zoom: 14 },
+    'veracruz': { lat: 19.1738, lng: -96.1342, zoom: 13 },
+    'coatzacoalcos': { lat: 18.1500, lng: -94.4333, zoom: 13 },
+    'minatitlan': { lat: 17.9833, lng: -94.5500, zoom: 13 }
 };
 
 // Centro por defecto
-const DEFAULT_CENTER = { lat: 18.0, lng: -94.5, zoom: 13 };
+const DEFAULT_CENTER = { lat: 17.9117, lng: -94.0958, zoom: 13 };
 
-// Tipos de emergencia con sus iconos
+// Tipos de emergencia
 const TIPOS_EMERGENCIA = {
     incendio: { icono: '🔥', nombre: 'Incendio', prioridad: 1 },
     inundacion: { icono: '🌊', nombre: 'Inundación', prioridad: 1 },
@@ -34,7 +37,6 @@ const ESTADOS_INCIDENTES = {
     cancelado: { texto: 'Cancelado', color: '#6b7280' }
 };
 
-// Funciones auxiliares
 function getIconoTipo(tipo) {
     return TIPOS_EMERGENCIA[tipo]?.icono || '📍';
 }

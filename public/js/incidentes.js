@@ -4,7 +4,6 @@
 
 // Referencias DOM
 const municipioSelector = document.getElementById('municipio-selector');
-const tiposContainer = document.getElementById('tipos-emergencia');
 const tipoSeleccionado = document.getElementById('tipo-seleccionado');
 const descripcionInput = document.getElementById('descripcion');
 const fotoInput = document.getElementById('foto');
@@ -46,24 +45,12 @@ function initTiposEmergencia() {
     
     tiposCards.forEach(card => {
         card.addEventListener('click', function() {
-            // Remover selección anterior
             tiposCards.forEach(c => c.classList.remove('seleccionado'));
-            
-            // Seleccionar nuevo
             this.classList.add('seleccionado');
             tipoActual = this.dataset.tipo;
             tipoSeleccionado.value = tipoActual;
         });
     });
-}
-
-// =====================================================
-// SUBIR FOTO (si es necesario)
-// =====================================================
-async function subirFoto(file) {
-    // Por ahora, no implementamos subida de fotos
-    // Se puede agregar después con Cloudinary o similar
-    return null;
 }
 
 // =====================================================
@@ -87,7 +74,9 @@ async function enviarReporte() {
         return;
     }
     
-    if (!mapaManager.ubicacionSeleccionada) {
+    // Obtener ubicación usando la función global
+    const ubicacion = window.obtenerUbicacionSeleccionada ? window.obtenerUbicacionSeleccionada() : null;
+    if (!ubicacion) {
         alert('⚠️ Por favor, haz clic en el mapa para seleccionar la ubicación');
         return;
     }
@@ -99,20 +88,13 @@ async function enviarReporte() {
     errorDiv.style.display = 'none';
     
     const datos = {
-        latitud: mapaManager.ubicacionSeleccionada.lat,
-        longitud: mapaManager.ubicacionSeleccionada.lng,
+        latitud: ubicacion.lat,
+        longitud: ubicacion.lng,
         tipo: tipoActual,
         descripcion: descripcion,
         ciudadano_nombre: nombreInput.value.trim() || 'Anónimo',
         ciudadano_telefono: telefonoInput.value.trim() || null
     };
-    
-    // Subir foto si existe
-    const foto = fotoInput.files[0];
-    if (foto) {
-        // Por ahora no implementamos subida
-        // datos.foto_url = await subirFoto(foto);
-    }
     
     try {
         const result = await api.reportarIncidente(datos, municipioSlug);
@@ -132,11 +114,12 @@ async function enviarReporte() {
             tipoSeleccionado.value = '';
             
             // Limpiar marcador
-            mapaManager.limpiarMarcador();
+            if (window.limpiarSeleccion) {
+                window.limpiarSeleccion();
+            }
             btnEnviar.disabled = true;
             btnEnviar.innerHTML = '📍 Selecciona una ubicación en el mapa';
             
-            // Ocultar éxito después de 5 segundos
             setTimeout(() => {
                 successDiv.style.display = 'none';
             }, 5000);
@@ -170,9 +153,8 @@ window.onUbicacionSeleccionada = (ubicacion) => {
 // =====================================================
 municipioSelector.addEventListener('change', (e) => {
     const slug = e.target.value;
-    if (slug && CENTROS_MUNICIPIOS[slug]) {
-        const centro = CENTROS_MUNICIPIOS[slug];
-        mapaManager.cambiarCentro(centro.lat, centro.lng, centro.zoom);
+    if (slug && window.cambiarMunicipio) {
+        window.cambiarMunicipio(slug);
     }
 });
 
@@ -180,11 +162,16 @@ municipioSelector.addEventListener('change', (e) => {
 // INICIALIZAR
 // =====================================================
 function init() {
-    // Verificar que Google Maps está cargado
-    if (typeof google === 'undefined') {
-        console.log('Esperando Google Maps...');
-        setTimeout(init, 1000);
+    // Verificar que Leaflet está cargado
+    if (typeof L === 'undefined') {
+        console.log('Esperando Leaflet...');
+        setTimeout(init, 500);
         return;
+    }
+    
+    // Inicializar mapa
+    if (window.iniciarMapa) {
+        window.iniciarMapa();
     }
     
     // Cargar municipios
@@ -196,13 +183,7 @@ function init() {
     // Evento del botón enviar
     document.getElementById('btn-enviar').addEventListener('click', enviarReporte);
     
-    // Cuando el mapa esté listo, cargar capas
-    window.onMapaIniciado = function() {
-        // Cargar albergues y zonas de riesgo en el mapa
-        if (typeof cargarCapasMapa === 'function') {
-            cargarCapasMapa();
-        }
-    };
+    console.log('✅ Incidentes.js inicializado con Leaflet');
 }
 
 // Iniciar cuando el DOM esté listo
