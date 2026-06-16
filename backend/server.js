@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 // =====================================================
 // IMPORTANTE: Configurar trust proxy para Railway
 // =====================================================
-app.set('trust proxy', 1);  // ← SOLUCIONA el error de rate limiting
+app.set('trust proxy', 1);
 
 // =====================================================
 // MIDDLEWARES
@@ -25,7 +25,7 @@ app.use(cors({
     credentials: true
 }));
 
-// Rate limiting (corregido)
+// Rate limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 100,
@@ -40,7 +40,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '../public')));
 
 // =====================================================
-// RUTAS DE PRUEBA (para diagnosticar)
+// RUTAS DE PRUEBA
 // =====================================================
 app.get('/api/test', (req, res) => {
     res.json({ message: 'API funcionando correctamente' });
@@ -53,6 +53,27 @@ app.get('/api/diagnostico', (req, res) => {
         has_db_url: !!process.env.DATABASE_URL,
         node_version: process.version
     });
+});
+
+// =====================================================
+// RUTA DE PRUEBA DE BASE DE DATOS (NUEVA)
+// =====================================================
+app.get('/api/db-test', async (req, res) => {
+    try {
+        const pool = require('./config/database');
+        const result = await pool.query('SELECT id, email, rol FROM usuarios LIMIT 5');
+        res.json({ 
+            status: 'OK', 
+            usuarios: result.rows,
+            count: result.rows.length 
+        });
+    } catch (error) {
+        console.error('❌ Error en /api/db-test:', error.message);
+        res.status(500).json({ 
+            error: error.message,
+            stack: error.stack 
+        });
+    }
 });
 
 // =====================================================

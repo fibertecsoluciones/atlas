@@ -1,36 +1,46 @@
 const { Pool } = require('pg');
 
-// Configuración simplificada para Railway
+console.log('🔍 Inicializando conexión a PostgreSQL...');
+console.log('🔍 DATABASE_URL existe:', !!process.env.DATABASE_URL);
+
+// Configuración simplificada y robusta
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },  // Railway requiere SSL
+    ssl: {
+        rejectUnauthorized: false
+    },
     max: 10,
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000
+    connectionTimeoutMillis: 5000
 });
 
-// Eventos de conexión
-pool.on('connect', () => {
-    console.log('✅ PostgreSQL: Conexión exitosa');
+// Probar conexión al iniciar
+pool.connect((err, client, release) => {
+    if (err) {
+        console.error('❌ ERROR DE CONEXIÓN A POSTGRESQL:', err.message);
+        return;
+    }
+    console.log('✅ PostgreSQL conectado exitosamente');
+    release();
 });
 
 pool.on('error', (err) => {
-    console.error('❌ PostgreSQL: Error de conexión', err.message);
+    console.error('❌ Error en PostgreSQL:', err.message);
 });
 
-// Función para probar la conexión
-const testConnection = async () => {
+// Función para probar la conexión con una consulta real
+async function testConnection() {
     try {
-        const result = await pool.query('SELECT NOW()');
-        console.log('✅ PostgreSQL: Query de prueba exitosa', result.rows[0]);
+        const result = await pool.query('SELECT NOW() as time');
+        console.log('✅ Query de prueba exitosa:', result.rows[0].time);
         return true;
     } catch (err) {
-        console.error('❌ PostgreSQL: Error en query de prueba', err.message);
+        console.error('❌ Error en query de prueba:', err.message);
         return false;
     }
-};
+}
 
-// Probar conexión al iniciar
+// Ejecutar prueba
 testConnection();
 
 module.exports = pool;
