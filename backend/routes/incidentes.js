@@ -39,13 +39,13 @@ router.get('/', async (req, res) => {
         res.json(result.rows);
         
     } catch (error) {
-        console.error(error);
+        console.error('Error en GET /incidentes:', error);
         res.status(500).json({ error: 'Error al obtener incidentes' });
     }
 });
 
 // =====================================================
-// GET: Incidentes para el mapa (con filtro geográfico)
+// GET: Incidentes para el mapa
 // =====================================================
 router.get('/mapa', async (req, res) => {
     try {
@@ -66,13 +66,13 @@ router.get('/mapa', async (req, res) => {
         res.json(result.rows);
         
     } catch (error) {
-        console.error(error);
+        console.error('Error en GET /incidentes/mapa:', error);
         res.status(500).json({ error: 'Error al obtener incidentes para mapa' });
     }
 });
 
 // =====================================================
-// POST: Crear nuevo incidente (reporte ciudadano)
+// POST: Crear nuevo incidente
 // =====================================================
 router.post('/', async (req, res) => {
     try {
@@ -87,7 +87,6 @@ router.post('/', async (req, res) => {
             ciudadano_telefono
         } = req.body;
         
-        // Validaciones
         if (!latitud || !longitud) {
             return res.status(400).json({ error: 'La ubicación es requerida' });
         }
@@ -96,8 +95,7 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'Tipo y descripción son requeridos' });
         }
         
-        // Determinar prioridad automática
-        let prioridad = 2; // Media por defecto
+        let prioridad = 2;
         const tiposAltaPrioridad = ['incendio', 'explosion', 'rescate'];
         if (tiposAltaPrioridad.includes(tipo)) {
             prioridad = 1;
@@ -116,9 +114,6 @@ router.post('/', async (req, res) => {
             ciudadano_telefono, prioridad
         ]);
         
-        // TODO: Enviar notificación a operadores
-        // (Se implementará después)
-        
         res.json({ 
             success: true, 
             id: result.rows[0].id,
@@ -126,20 +121,19 @@ router.post('/', async (req, res) => {
         });
         
     } catch (error) {
-        console.error(error);
+        console.error('Error en POST /incidentes:', error);
         res.status(500).json({ error: 'Error al crear incidente' });
     }
 });
 
 // =====================================================
-// PUT: Actualizar estado de incidente (solo operadores)
+// PUT: Actualizar estado de incidente
 // =====================================================
 router.put('/:id/estado', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const { estado, comentarios } = req.body;
         
-        // Verificar que el incidente pertenece al municipio
         const checkResult = await pool.query(
             'SELECT id FROM incidentes WHERE id = $1 AND municipio_id = $2',
             [id, req.municipioId]
@@ -173,7 +167,7 @@ router.put('/:id/estado', authMiddleware, async (req, res) => {
         res.json({ success: true, mensaje: 'Estado actualizado' });
         
     } catch (error) {
-        console.error(error);
+        console.error('Error en PUT /incidentes/:id/estado:', error);
         res.status(500).json({ error: 'Error al actualizar estado' });
     }
 });
