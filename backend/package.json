@@ -1,25 +1,19 @@
 {
-  "name": "sistema-atlas-sas",
+  "name": "sistema-atlas-backend",
   "version": "1.0.0",
-  "description": "Sistema SAS de gestión de emergencias para Protección Civil",
-  "main": "backend/server.js",
+  "main": "server.js",
   "scripts": {
-    "start": "cd backend && npm install && node server.js",
-    "build": "echo 'Build completed'"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
     "pg": "^8.11.0",
     "cors": "^2.8.5",
-    "bcrypt": "^5.1.0",
+    "bcryptjs": "^2.4.3",
     "jsonwebtoken": "^9.0.0",
     "dotenv": "^16.0.3",
     "multer": "^1.4.5-lts.1",
     "express-rate-limit": "^6.7.0",
     "helmet": "^7.0.0"
-  },
-  "engines": {
-    "node": "18.x",
-    "npm": "9.x"
   }
 }
