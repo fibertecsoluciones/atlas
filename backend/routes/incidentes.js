@@ -4,7 +4,7 @@ const pool = require('../config/database');
 const { authMiddleware } = require('../middleware/auth');
 const tenantMiddleware = require('../middleware/tenant');
 
-// Aplicar middleware multi-tenant a todas las rutas
+// Aplicar middleware multi-tenant
 router.use(tenantMiddleware);
 
 // =====================================================
@@ -39,7 +39,7 @@ router.get('/', async (req, res) => {
         res.json(result.rows);
         
     } catch (error) {
-        console.error('Error en GET /incidentes:', error);
+        console.error('❌ Error en GET /incidentes:', error);
         res.status(500).json({ error: 'Error al obtener incidentes' });
     }
 });
@@ -50,12 +50,21 @@ router.get('/', async (req, res) => {
 router.get('/mapa', async (req, res) => {
     try {
         const result = await pool.query(`
-            SELECT id, latitud, longitud, tipo, descripcion, estado, prioridad, 
-                   foto_url, fecha_reporte, direccion_aproximada,
-                   CASE 
-                       WHEN EXTRACT(EPOCH FROM (NOW() - fecha_reporte)) < 300 THEN 'nuevo'
-                       ELSE 'antiguo'
-                   END as es_nuevo
+            SELECT 
+                id, 
+                latitud, 
+                longitud, 
+                tipo, 
+                descripcion, 
+                estado, 
+                prioridad, 
+                foto_url, 
+                fecha_reporte, 
+                direccion_aproximada,
+                CASE 
+                    WHEN EXTRACT(EPOCH FROM (NOW() - fecha_reporte)) < 300 THEN 'nuevo'
+                    ELSE 'antiguo'
+                END as es_nuevo
             FROM incidentes
             WHERE municipio_id = $1 AND estado != 'resuelto'
             ORDER BY 
@@ -66,7 +75,7 @@ router.get('/mapa', async (req, res) => {
         res.json(result.rows);
         
     } catch (error) {
-        console.error('Error en GET /incidentes/mapa:', error);
+        console.error('❌ Error en GET /incidentes/mapa:', error);
         res.status(500).json({ error: 'Error al obtener incidentes para mapa' });
     }
 });
@@ -103,15 +112,30 @@ router.post('/', async (req, res) => {
         
         const result = await pool.query(`
             INSERT INTO incidentes (
-                municipio_id, latitud, longitud, direccion_aproximada,
-                tipo, descripcion, foto_url, ciudadano_nombre,
-                ciudadano_telefono, prioridad, estado
+                municipio_id, 
+                latitud, 
+                longitud, 
+                direccion_aproximada,
+                tipo, 
+                descripcion, 
+                foto_url, 
+                ciudadano_nombre,
+                ciudadano_telefono, 
+                prioridad, 
+                estado
             ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendiente')
             RETURNING id
         `, [
-            req.municipioId, latitud, longitud, direccion_aproximada,
-            tipo, descripcion, foto_url, ciudadano_nombre || 'Anónimo',
-            ciudadano_telefono, prioridad
+            req.municipioId, 
+            latitud, 
+            longitud, 
+            direccion_aproximada,
+            tipo, 
+            descripcion, 
+            foto_url, 
+            ciudadano_nombre || 'Anónimo',
+            ciudadano_telefono, 
+            prioridad
         ]);
         
         res.json({ 
@@ -121,7 +145,7 @@ router.post('/', async (req, res) => {
         });
         
     } catch (error) {
-        console.error('Error en POST /incidentes:', error);
+        console.error('❌ Error en POST /incidentes:', error);
         res.status(500).json({ error: 'Error al crear incidente' });
     }
 });
@@ -129,7 +153,7 @@ router.post('/', async (req, res) => {
 // =====================================================
 // PUT: Actualizar estado de incidente
 // =====================================================
-router.put('/:id/estado', authMiddleware, async (req, res) => {
+router.put('/:id/estado', authMiddleware, async function(req, res) {
     try {
         const { id } = req.params;
         const { estado, comentarios } = req.body;
@@ -143,15 +167,15 @@ router.put('/:id/estado', authMiddleware, async (req, res) => {
             return res.status(404).json({ error: 'Incidente no encontrado' });
         }
         
-        let query = `UPDATE incidentes SET estado = $1, fecha_actualizacion = NOW()`;
+        let query = 'UPDATE incidentes SET estado = $1, fecha_actualizacion = NOW()';
         const params = [estado];
         
         if (estado === 'asignado') {
-            query += `, fecha_asignacion = NOW()`;
+            query += ', fecha_asignacion = NOW()';
         }
         
         if (estado === 'resuelto') {
-            query += `, fecha_resolucion = NOW()`;
+            query += ', fecha_resolucion = NOW()';
         }
         
         if (comentarios) {
@@ -167,7 +191,7 @@ router.put('/:id/estado', authMiddleware, async (req, res) => {
         res.json({ success: true, mensaje: 'Estado actualizado' });
         
     } catch (error) {
-        console.error('Error en PUT /incidentes/:id/estado:', error);
+        console.error('❌ Error en PUT /incidentes/:id/estado:', error);
         res.status(500).json({ error: 'Error al actualizar estado' });
     }
 });
