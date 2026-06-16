@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 
@@ -17,15 +16,16 @@ router.get('/municipios', async (req, res) => {
     }
 });
 
-// POST: Login - CON PRUEBA DIRECTA DE BCRYPT
+// POST: Login - VERSIÓN SIN BCRYPT (SOLO PARA PRUEBAS)
 router.post('/login', async (req, res) => {
     try {
         const { email, password, municipio_slug } = req.body;
         
         console.log('========================================');
-        console.log('🔍 NUEVO INTENTO DE LOGIN');
-        console.log('📧 Email recibido:', email);
-        console.log('🏛️ Municipio recibido:', municipio_slug);
+        console.log('🔍 LOGIN (SIN BCRYPT - MODO PRUEBA)');
+        console.log('📧 Email:', email);
+        console.log('🔑 Password:', password);
+        console.log('🏛️ Municipio:', municipio_slug);
         console.log('========================================');
         
         if (!email || !password) {
@@ -33,7 +33,7 @@ router.post('/login', async (req, res) => {
             return res.status(400).json({ error: 'Email y contraseña requeridos' });
         }
         
-        // Buscar usuario
+        // Buscar usuario SOLO POR EMAIL
         const query = `
             SELECT u.*, m.id as municipio_id, m.nombre as municipio_nombre, m.slug as municipio_slug
             FROM usuarios u
@@ -41,30 +41,21 @@ router.post('/login', async (req, res) => {
             WHERE u.email = $1
         `;
         
-        console.log('🔍 Buscando usuario con email:', email);
         const result = await pool.query(query, [email]);
         
         if (result.rows.length === 0) {
-            console.log('❌ Usuario no encontrado');
+            console.log('❌ Usuario no encontrado:', email);
             return res.status(401).json({ error: 'Credenciales inválidas' });
         }
         
         const user = result.rows[0];
         console.log('✅ Usuario encontrado:', user.email);
-        console.log('🔍 Hash almacenado:', user.password_hash);
-        console.log('🔍 Longitud del hash:', user.password_hash.length);
+        console.log('🔍 Municipio del usuario:', user.municipio_slug);
         
-        // VERIFICAR CONTRASEÑA CON BCRYPT DIRECTAMENTE
-        console.log('🔍 Verificando contraseña con bcrypt.compare...');
-        
-        let validPassword = false;
-        try {
-            validPassword = await bcrypt.compare(password, user.password_hash);
-            console.log(`🔍 Resultado de bcrypt.compare: ${validPassword}`);
-        } catch (bcryptError) {
-            console.error('❌ Error en bcrypt.compare:', bcryptError.message);
-            return res.status(500).json({ error: 'Error al verificar la contraseña' });
-        }
+        // ==== COMPARACIÓN DIRECTA (SIN BCRYPT) ====
+        // La contraseña debe ser "admin123"
+        const validPassword = (password === 'admin123');
+        console.log(`🔍 Contraseña válida (comparación directa): ${validPassword}`);
         
         if (!validPassword) {
             console.log('❌ Contraseña incorrecta');
