@@ -29,14 +29,10 @@ const listaRiesgos = document.getElementById('lista-riesgos');
 const toastContainer = document.getElementById('toast-container');
 
 // =====================================================
-// CONFIGURACIÓN
+// NOTA: DEFAULT_CENTER y CENTROS_MUNICIPIOS 
+// ya están definidos en config.js
+// NO los declares de nuevo aquí
 // =====================================================
-const CENTRO = [17.9117, -94.0958];
-const DEFAULT_CENTER = { lat: 17.9117, lng: -94.0958, zoom: 13 };
-const CENTROS_MUNICIPIOS = {
-    'las-choapas': { lat: 17.9117, lng: -94.0958, zoom: 13 },
-    'moloacan': { lat: 17.9842, lng: -94.3467, zoom: 14 }
-};
 
 // =====================================================
 // FUNCIONES DE ICONOS
