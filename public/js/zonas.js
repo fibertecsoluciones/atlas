@@ -1,5 +1,5 @@
 // =====================================================
-// ZONAS DE RIESGO - MÓDULO COMPLETO (VERSIÓN CORREGIDA)
+// ZONAS DE RIESGO - MÓDULO COMPLETO
 // =====================================================
 
 let riesgosData = [];
@@ -141,7 +141,6 @@ function renderizarMapaRiesgos() {
 // =====================================================
 async function editarZona(id) {
     try {
-        // Obtener los datos de la zona
         const res = await fetch(`/api/zonas/${id}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -179,11 +178,36 @@ async function editarZona(id) {
         const bounds = polygonEditando.getBounds();
         mapa.fitBounds(bounds, { padding: [50, 50] });
         
-        // Activar edición del polígono (puntos arrastrables)
-        polygonEditando.editing.enable();
+        // =============================================
+        // ACTIVAR EDICIÓN CON LEAFLET DRAW
+        // =============================================
+        if (drawControl && drawnItems) {
+            drawnItems.addLayer(polygonEditando);
+            // Intentar activar modo edición
+            try {
+                drawControl.setDrawingMode('edit');
+            } catch(e) {
+                // Fallback: edición manual
+                polygonEditando.editing.enable();
+            }
+        } else {
+            polygonEditando.editing.enable();
+        }
         
         // =============================================
-        // MOSTRAR BOTÓN PARA GUARDAR EN LA ESQUINA
+        // ESCUCHAR CUANDO TERMINE LA EDICIÓN
+        // =============================================
+        mapa.once('draw:edited', function(e) {
+            const layers = e.layers;
+            layers.eachLayer(function(layer) {
+                if (layer === polygonEditando) {
+                    mostrarToast('✅ Polígono actualizado. Haz clic en "💾 Guardar" para guardar', 'success');
+                }
+            });
+        });
+        
+        // =============================================
+        // MOSTRAR BOTÓN GUARDAR
         // =============================================
         mostrarBotonGuardarEdicion();
         
@@ -199,13 +223,11 @@ async function editarZona(id) {
 // MOSTRAR BOTÓN GUARDAR EN EL MAPA
 // =====================================================
 function mostrarBotonGuardarEdicion() {
-    // Eliminar botón anterior si existe
     const btnAnterior = document.getElementById('btn-guardar-edicion');
     if (btnAnterior) {
         btnAnterior.remove();
     }
     
-    // Crear botón flotante
     const btnGuardar = document.createElement('button');
     btnGuardar.id = 'btn-guardar-edicion';
     btnGuardar.innerHTML = '💾 Guardar Cambios';
@@ -235,7 +257,6 @@ function mostrarBotonGuardarEdicion() {
         mostrarFormularioEdicion();
     };
     
-    // Agregar al contenedor del mapa
     const mapContainer = document.querySelector('.map-container');
     if (mapContainer) {
         mapContainer.appendChild(btnGuardar);
