@@ -45,7 +45,7 @@ async function cargarRiesgos() {
 }
 
 // =====================================================
-// RENDERIZAR LISTA DE ZONAS
+// RENDERIZAR LISTA DE ZONAS CON BOTONES
 // =====================================================
 function renderizarListaRiesgos() {
     if (!listaRiesgos) return;
@@ -65,12 +65,24 @@ function renderizarListaRiesgos() {
     listaRiesgos.innerHTML = riesgosData.map(r => `
         <div class="riesgo-card">
             <div style="display:flex;justify-content:space-between;align-items:center;">
-                <strong>⚠️ ${r.nombre}</strong>
-                <span style="font-size:0.7rem;padding:2px 10px;border-radius:12px;background:${getNivelColor(r.nivel)};color:white;">
-                    ${r.nivel?.toUpperCase() || 'MEDIO'}
-                </span>
+                <div>
+                    <strong>⚠️ ${r.nombre}</strong>
+                    <span style="font-size:0.7rem;padding:2px 10px;border-radius:12px;margin-left:10px;background:${getNivelColor(r.nivel)};color:white;">
+                        ${r.nivel?.toUpperCase() || 'MEDIO'}
+                    </span>
+                </div>
+                <div>
+                    <button onclick="editarZona(${r.id})" 
+                            style="background:#3b82f6;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;margin-left:5px;">
+                        ✏️
+                    </button>
+                    <button onclick="eliminarZona(${r.id})" 
+                            style="background:#dc2626;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;margin-left:5px;">
+                        🗑️
+                    </button>
+                </div>
             </div>
-            <div style="font-size:0.8rem;color:#8a9bb5;">
+            <div style="font-size:0.8rem;color:#8a9bb5;margin-top:4px;">
                 ${r.tipo || 'Sin tipo'} | ${r.descripcion || ''}
             </div>
             <div style="font-size:0.7rem;color:#6b7f9f;margin-top:4px;">
@@ -110,7 +122,8 @@ function renderizarMapaRiesgos() {
                   <b>⚠️ ${r.nombre}</b><br>
                   Tipo: ${r.tipo || 'No especificado'}<br>
                   Nivel: ${r.nivel?.toUpperCase() || 'MEDIO'}<br>
-                  ${r.descripcion || ''}
+                  👥 ${r.poblacion_afectada || 0} personas<br>
+                  🏠 ${r.viviendas_afectadas || 0} viviendas
               `);
             
             poligonosRiesgo.push(polygon);
@@ -121,10 +134,135 @@ function renderizarMapaRiesgos() {
 }
 
 // =====================================================
+// EDITAR ZONA DE RIESGO
+// =====================================================
+async function editarZona(id) {
+    try {
+        const res = await fetch(`/api/zonas/${id}`, {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'X-Municipio-Slug': userData?.municipio?.slug || 'las-choapas'
+            }
+        });
+        
+        if (!res.ok) {
+            throw new Error('Error al obtener los datos de la zona');
+        }
+        
+        const zona = await res.json();
+        
+        modalTitulo.textContent = '✏️ Editar Zona de Riesgo';
+        modalBody.innerHTML = `
+            <form id="form-zona-edit" class="form-reporte">
+                <div class="form-group">
+                    <label>Nombre de la zona *</label>
+                    <input type="text" id="z-edit-nombre" value="${zona.nombre}" required>
+                </div>
+                <div class="form-group">
+                    <label>Tipo de riesgo</label>
+                    <select id="z-edit-tipo">
+                        <option value="inundacion" ${zona.tipo === 'inundacion' ? 'selected' : ''}>🌊 Inundación</option>
+                        <option value="deslizamiento" ${zona.tipo === 'deslizamiento' ? 'selected' : ''}>⛰️ Deslizamiento</option>
+                        <option value="incendio" ${zona.tipo === 'incendio' ? 'selected' : ''}>🔥 Incendio</option>
+                        <option value="sismo" ${zona.tipo === 'sismo' ? 'selected' : ''}>🌍 Sismo</option>
+                        <option value="vendaval" ${zona.tipo === 'vendaval' ? 'selected' : ''}>💨 Vendaval</option>
+                        <option value="otro" ${zona.tipo === 'otro' ? 'selected' : ''}>⚠️ Otro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nivel de riesgo</label>
+                    <select id="z-edit-nivel">
+                        <option value="critico" ${zona.nivel === 'critico' ? 'selected' : ''}>🔴 Crítico</option>
+                        <option value="alto" ${zona.nivel === 'alto' ? 'selected' : ''}>🟠 Alto</option>
+                        <option value="medio" ${zona.nivel === 'medio' ? 'selected' : ''}>🟡 Medio</option>
+                        <option value="bajo" ${zona.nivel === 'bajo' ? 'selected' : ''}>🟢 Bajo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea id="z-edit-descripcion" rows="2">${zona.descripcion || ''}</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Población afectada</label>
+                    <input type="number" id="z-edit-poblacion" value="${zona.poblacion_afectada || 0}" min="0">
+                </div>
+                <div class="form-group">
+                    <label>Viviendas afectadas</label>
+                    <input type="number" id="z-edit-viviendas" value="${zona.viviendas_afectadas || 0}" min="0">
+                </div>
+                <button type="submit" class="btn-enviar">💾 Actualizar Zona</button>
+            </form>
+        `;
+        
+        modalOverlay.style.display = 'flex';
+        
+        document.getElementById('form-zona-edit').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await actualizarZona(id);
+        });
+        
+    } catch (error) {
+        console.error('❌ Error al cargar zona para editar:', error);
+        mostrarToast('❌ Error al cargar los datos de la zona', 'error');
+    }
+}
+
+// =====================================================
+// ACTUALIZAR ZONA DE RIESGO
+// =====================================================
+async function actualizarZona(id) {
+    const nombre = document.getElementById('z-edit-nombre').value.trim();
+    const tipo = document.getElementById('z-edit-tipo').value;
+    const nivel = document.getElementById('z-edit-nivel').value;
+    const descripcion = document.getElementById('z-edit-descripcion').value.trim();
+    const poblacion = parseInt(document.getElementById('z-edit-poblacion').value) || 0;
+    const viviendas = parseInt(document.getElementById('z-edit-viviendas').value) || 0;
+    
+    if (!nombre) {
+        mostrarToast('⚠️ El nombre es requerido', 'warning');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/zonas/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'X-Municipio-Slug': userData?.municipio?.slug || 'las-choapas'
+            },
+            body: JSON.stringify({
+                nombre,
+                tipo,
+                nivel,
+                descripcion,
+                poblacion_afectada: poblacion,
+                viviendas_afectadas: viviendas
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            mostrarToast('✅ Zona actualizada correctamente', 'success');
+            cerrarModal();
+            await cargarRiesgos();
+        } else {
+            mostrarToast(`❌ ${data.error || 'Error al actualizar'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error actualizando zona:', error);
+        mostrarToast('❌ Error de conexión', 'error');
+    }
+}
+
+// =====================================================
 // ELIMINAR ZONA DE RIESGO
 // =====================================================
 async function eliminarZona(id) {
-    if (!confirm('¿Estás seguro de eliminar esta zona de riesgo?')) return;
+    if (!confirm('¿Estás seguro de que quieres eliminar esta zona de riesgo?')) {
+        return;
+    }
     
     try {
         const res = await fetch(`/api/zonas/${id}`, {
@@ -135,15 +273,16 @@ async function eliminarZona(id) {
             }
         });
         
+        const data = await res.json();
+        
         if (res.ok) {
-            mostrarToast('✅ Zona eliminada', 'success');
+            mostrarToast('✅ Zona eliminada correctamente', 'success');
             await cargarRiesgos();
         } else {
-            const data = await res.json();
             mostrarToast(`❌ ${data.error || 'Error al eliminar'}`, 'error');
         }
     } catch (error) {
-        console.error('Error eliminando zona:', error);
+        console.error('❌ Error eliminando zona:', error);
         mostrarToast('❌ Error de conexión', 'error');
     }
 }
@@ -152,4 +291,5 @@ async function eliminarZona(id) {
 // EXPORTAR FUNCIONES GLOBALES
 // =====================================================
 window.cargarRiesgos = cargarRiesgos;
+window.editarZona = editarZona;
 window.eliminarZona = eliminarZona;
