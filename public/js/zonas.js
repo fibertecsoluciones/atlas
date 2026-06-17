@@ -4,6 +4,8 @@
 
 let riesgosData = [];
 let poligonosRiesgo = [];
+let polygonEditando = null;
+let zonaEditandoId = null;
 
 // =====================================================
 // CARGAR ZONAS DE RIESGO
@@ -134,10 +136,11 @@ function renderizarMapaRiesgos() {
 }
 
 // =====================================================
-// EDITAR ZONA DE RIESGO
+// EDITAR ZONA DE RIESGO (CON POLÍGONO EDITABLE)
 // =====================================================
 async function editarZona(id) {
     try {
+        // Obtener los datos de la zona
         const res = await fetch(`/api/zonas/${id}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -150,7 +153,43 @@ async function editarZona(id) {
         }
         
         const zona = await res.json();
+        zonaEditandoId = id;
         
+        // =============================================
+        // DIBUJAR EL POLÍGONO EXISTENTE EN EL MAPA
+        // =============================================
+        // Limpiar polígono anterior si existe
+        if (polygonEditando) {
+            mapa.removeLayer(polygonEditando);
+            polygonEditando = null;
+        }
+        
+        // Parsear el GeoJSON
+        const geo = JSON.parse(zona.coordenadas_poligono);
+        const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
+        
+        // Crear polígono editable
+        polygonEditando = L.polygon(coords, {
+            color: '#3b82f6',
+            weight: 4,
+            opacity: 0.8,
+            fillColor: '#3b82f6',
+            fillOpacity: 0.2
+        }).addTo(mapa);
+        
+        // Habilitar edición (arrastrar puntos)
+        polygonEditando.on('click', function() {
+            this.editing.enable();
+            mostrarToast('🔄 Arrastra los puntos para modificar el polígono', 'info');
+        });
+        
+        // Centrar mapa en el polígono
+        const bounds = polygonEditando.getBounds();
+        mapa.fitBounds(bounds, { padding: [50, 50] });
+        
+        // =============================================
+        // MOSTRAR FORMULARIO DE EDICIÓN
+        // =============================================
         modalTitulo.textContent = '✏️ Editar Zona de Riesgo';
         modalBody.innerHTML = `
             <form id="form-zona-edit" class="form-reporte">
@@ -190,16 +229,22 @@ async function editarZona(id) {
                     <label>Viviendas afectadas</label>
                     <input type="number" id="z-edit-viviendas" value="${zona.viviendas_afectadas || 0}" min="0">
                 </div>
-                <button type="submit" class="btn-enviar">💾 Actualizar Zona</button>
+                <div style="display:flex;gap:10px;margin-top:10px;">
+                    <button type="submit" class="btn-enviar" style="flex:1;">💾 Guardar Cambios</button>
+                    <button type="button" class="btn-enviar" style="flex:1;background:#6b7280;" onclick="cancelarEdicionPoligono()">❌ Cancelar</button>
+                </div>
             </form>
         `;
         
         modalOverlay.style.display = 'flex';
         
+        // Evento del formulario
         document.getElementById('form-zona-edit').addEventListener('submit', async function(e) {
             e.preventDefault();
-            await actualizarZona(id);
+            await actualizarZonaConPoligono(id);
         });
+        
+        mostrarToast('🔄 Haz clic en el polígono azul para editarlo', 'info');
         
     } catch (error) {
         console.error('❌ Error al cargar zona para editar:', error);
@@ -208,9 +253,9 @@ async function editarZona(id) {
 }
 
 // =====================================================
-// ACTUALIZAR ZONA DE RIESGO
+// ACTUALIZAR ZONA CON POLÍGONO EDITADO
 // =====================================================
-async function actualizarZona(id) {
+async function actualizarZonaConPoligono(id) {
     const nombre = document.getElementById('z-edit-nombre').value.trim();
     const tipo = document.getElementById('z-edit-tipo').value;
     const nivel = document.getElementById('z-edit-nivel').value;
@@ -222,6 +267,25 @@ async function actualizarZona(id) {
         mostrarToast('⚠️ El nombre es requerido', 'warning');
         return;
     }
+    
+    // =============================================
+    // OBTENER LAS COORDENADAS DEL POLÍGONO EDITADO
+    // =============================================
+    let coordenadas = null;
+    
+    if (polygonEditando) {
+        const latlngs = polygonEditando.getLatLngs()[0];
+        coordenadas = latlngs.map(c => [c.lng, c.lat]);
+        coordenadas.push(coordenadas[0]);
+    } else {
+        mostrarToast('⚠️ No hay polígono para guardar', 'warning');
+        return;
+    }
+    
+    const geojson = {
+        type: 'Polygon',
+        coordinates: [coordenadas]
+    };
     
     try {
         const res = await fetch(`/api/zonas/${id}`, {
@@ -237,7 +301,8 @@ async function actualizarZona(id) {
                 nivel,
                 descripcion,
                 poblacion_afectada: poblacion,
-                viviendas_afectadas: viviendas
+                viviendas_afectadas: viviendas,
+                coordenadas_poligono: JSON.stringify(geojson)
             })
         });
         
@@ -246,6 +311,11 @@ async function actualizarZona(id) {
         if (res.ok) {
             mostrarToast('✅ Zona actualizada correctamente', 'success');
             cerrarModal();
+            if (polygonEditando) {
+                mapa.removeLayer(polygonEditando);
+                polygonEditando = null;
+            }
+            zonaEditandoId = null;
             await cargarRiesgos();
         } else {
             mostrarToast(`❌ ${data.error || 'Error al actualizar'}`, 'error');
@@ -254,6 +324,19 @@ async function actualizarZona(id) {
         console.error('❌ Error actualizando zona:', error);
         mostrarToast('❌ Error de conexión', 'error');
     }
+}
+
+// =====================================================
+// CANCELAR EDICIÓN DE POLÍGONO
+// =====================================================
+function cancelarEdicionPoligono() {
+    if (polygonEditando) {
+        mapa.removeLayer(polygonEditando);
+        polygonEditando = null;
+    }
+    zonaEditandoId = null;
+    cerrarModal();
+    mostrarToast('⏹️ Edición cancelada', 'info');
 }
 
 // =====================================================
@@ -293,3 +376,4 @@ async function eliminarZona(id) {
 window.cargarRiesgos = cargarRiesgos;
 window.editarZona = editarZona;
 window.eliminarZona = eliminarZona;
+window.cancelarEdicionPoligono = cancelarEdicionPoligono;
