@@ -1,11 +1,15 @@
 // =====================================================
-// DASHBOARD - SISTEMA ATLAS SAS (VERSIÓN ESTABLE)
+// DASHBOARD - SISTEMA ATLAS SAS
+// VERSIÓN LIMPIA Y FUNCIONAL
 // =====================================================
 
+// =====================================================
+// VARIABLES GLOBALES
+// =====================================================
 let mapa = null;
 let userData = null;
-let drawnItems = null;  // ← En lugar de featureGroup
-let drawControl = null; // ← En lugar de drawingControl
+let drawnItems = null;
+let drawControl = null;
 let dibujando = false;
 
 // =====================================================
@@ -30,8 +34,31 @@ const modalBody = document.getElementById('modal-body');
 const toastContainer = document.getElementById('toast-container');
 
 // =====================================================
-// FUNCIONES DE ICONOS
+// FUNCIONES GLOBALES PARA OTROS MÓDULOS
 // =====================================================
+function mostrarToast(mensaje, tipo = 'info') {
+    if (!toastContainer) return;
+    const toast = document.createElement('div');
+    toast.className = `toast ${tipo}`;
+    toast.textContent = mensaje;
+    toastContainer.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+}
+
+function cerrarModal() {
+    if (modalOverlay) modalOverlay.style.display = 'none';
+}
+
+function getNivelColor(nivel) {
+    const colores = {
+        'critico': '#dc2626',
+        'alto': '#f97316',
+        'medio': '#f59e0b',
+        'bajo': '#10b981'
+    };
+    return colores[nivel] || '#6b7f9f';
+}
+
 function crearIconoEmoji(emoji, color, tamaño = 36, fondo = true) {
     const fondoStyle = fondo ? `
         background: rgba(0,0,0,0.6);
@@ -58,32 +85,9 @@ function crearIconoEmoji(emoji, color, tamaño = 36, fondo = true) {
     });
 }
 
-function getNivelColor(nivel) {
-    const colores = {
-        'critico': '#dc2626',
-        'alto': '#f97316',
-        'medio': '#f59e0b',
-        'bajo': '#10b981'
-    };
-    return colores[nivel] || '#6b7f9f';
-}
-
 // =====================================================
-// UTILIDADES
+// OBTENER USUARIO
 // =====================================================
-function mostrarToast(mensaje, tipo = 'info') {
-    if (!toastContainer) return;
-    const toast = document.createElement('div');
-    toast.className = `toast ${tipo}`;
-    toast.textContent = mensaje;
-    toastContainer.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
-}
-
-function cerrarModal() {
-    if (modalOverlay) modalOverlay.style.display = 'none';
-}
-
 function obtenerUsuario() {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -96,35 +100,32 @@ function obtenerUsuario() {
 }
 
 // =====================================================
-// INICIALIZAR MAPA (CON LEAFLET-DRAW)
+// INICIALIZAR MAPA
 // =====================================================
 function initMapaDashboard() {
     try {
-        console.log('🗺️ Creando mapa...');
-        if (mapa) { mapa.remove(); mapa = null; }
+        console.log('🗺️ Inicializando mapa...');
+        
+        if (mapa) {
+            mapa.remove();
+            mapa = null;
+        }
         
         const user = JSON.parse(localStorage.getItem('user') || '{}');
         const slug = user.municipio?.slug || 'las-choapas';
         const centro = CENTROS_MUNICIPIOS[slug] || DEFAULT_CENTER;
         
-        // Crear mapa
         mapa = L.map('mapa-dashboard').setView([centro.lat, centro.lng], centro.zoom || 13);
         
-        // Capa base
         L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             attribution: 'Map data &copy; Google',
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         }).addTo(mapa);
         
-        // =============================================
-        // CONFIGURACIÓN CORRECTA DE LEAFLET-DRAW
-        // =============================================
-        
-        // 1. Crear capa para los dibujos
+        // Configurar Leaflet Draw
         drawnItems = L.featureGroup().addTo(mapa);
         
-        // 2. Crear control de dibujo
         drawControl = new L.Control.Draw({
             position: 'topleft',
             draw: {
@@ -146,8 +147,7 @@ function initMapaDashboard() {
                 },
                 circle: false,
                 polyline: false,
-                marker: false,
-                circlemarker: false
+                marker: false
             },
             edit: {
                 featureGroup: drawnItems,
@@ -155,18 +155,15 @@ function initMapaDashboard() {
             }
         });
         
-        // 3. Agregar control al mapa
         mapa.addControl(drawControl);
         
-        // 4. Evento cuando se crea un dibujo
+        // Evento cuando se crea un dibujo
         mapa.on(L.Draw.Event.CREATED, function(event) {
             const layer = event.layer;
             const type = event.layerType;
             
-            // Agregar a la capa de dibujos
             drawnItems.addLayer(layer);
             
-            // Obtener coordenadas del polígono
             if (type === 'polygon' || type === 'rectangle') {
                 const latlngs = layer.getLatLngs()[0];
                 const coords = latlngs.map(c => [c.lng, c.lat]);
@@ -174,41 +171,33 @@ function initMapaDashboard() {
                     type: 'Polygon',
                     coordinates: [coords]
                 };
-                
-                // Mostrar formulario
                 mostrarFormularioZona(geojson, layer);
             }
         });
         
-        // 5. Evento cuando se elimina un dibujo
-        mapa.on(L.Draw.Event.DELETED, function(event) {
-            console.log('🗑️ Dibujo eliminado');
+        // Evento cuando se cancela el dibujo
+        mapa.on(L.Draw.Event.DRAWSTOP, function() {
+            dibujando = false;
         });
         
-        // 6. Evento cuando se edita un dibujo
-        mapa.on(L.Draw.Event.EDITED, function(event) {
-            console.log('✏️ Dibujo editado');
-        });
-        
-        // Ajustar tamaño del mapa
         setTimeout(() => mapa.invalidateSize(), 500);
+        console.log('✅ Mapa inicializado correctamente');
         
-        console.log('✅ Mapa inicializado con Leaflet Draw');
         window.mapa = mapa;
         window.drawnItems = drawnItems;
         window.drawControl = drawControl;
         
     } catch (error) {
-        console.error('❌ Error al crear mapa:', error);
+        console.error('❌ Error al inicializar mapa:', error);
         mostrarToast('❌ Error al inicializar el mapa', 'error');
     }
 }
 
 // =====================================================
-// ACTIVAR DIBUJO DE POLÍGONO (SIMPLIFICADO)
+// ACTIVAR DIBUJO DE POLÍGONO
 // =====================================================
 function activarDibujoPoligono() {
-    console.log('🖊️ Botón Dibujar presionado');
+    console.log('🖊️ Activando dibujo de polígono');
     
     if (!mapa) {
         mostrarToast('⚠️ El mapa no está cargado', 'warning');
@@ -225,34 +214,16 @@ function activarDibujoPoligono() {
         return;
     }
     
-    // =============================================
-    // FORMA CORRECTA DE ACTIVAR DIBUJO EN LEAFLET-DRAW v1.x
-    // =============================================
-    
-    // 1. Activar el modo polígono
-    drawControl.setDrawingMode('polygon');
     dibujando = true;
-    
+    drawControl.setDrawingMode('polygon');
     mostrarToast('✏️ Dibuja un polígono en el mapa', 'info');
-    
-    // 2. Cuando se complete el dibujo (ya está manejado en initMapaDashboard)
-    // 3. Cuando se cancele
-    mapa.once(L.Draw.Event.DRAWSTOP, function() {
-        dibujando = false;
-        mostrarToast('⏹️ Dibujo cancelado', 'info');
-    });
 }
 
 // =====================================================
-// MOSTRAR FORMULARIO PARA ZONA DE RIESGO
+// MOSTRAR FORMULARIO ZONA DE RIESGO
 // =====================================================
 function mostrarFormularioZona(geojson, layer) {
-    if (!modalOverlay) {
-        console.error('❌ Modal no encontrado');
-        return;
-    }
-    
-    console.log('📝 Mostrando formulario para zona de riesgo');
+    if (!modalOverlay) return;
     
     modalTitulo.textContent = '⚠️ Nueva Zona de Riesgo';
     modalBody.innerHTML = `
@@ -286,11 +257,11 @@ function mostrarFormularioZona(geojson, layer) {
                 <textarea id="z-descripcion" rows="2" placeholder="Descripción de la zona"></textarea>
             </div>
             <div class="form-group">
-                <label>Población afectada (opcional)</label>
+                <label>Población afectada</label>
                 <input type="number" id="z-poblacion" placeholder="0" min="0">
             </div>
             <div class="form-group">
-                <label>Viviendas afectadas (opcional)</label>
+                <label>Viviendas afectadas</label>
                 <input type="number" id="z-viviendas" placeholder="0" min="0">
             </div>
             <button type="submit" class="btn-enviar">💾 Guardar Zona</button>
@@ -345,29 +316,20 @@ async function guardarZona(geojson, layer) {
         if (res.ok) {
             mostrarToast('✅ Zona de riesgo guardada', 'success');
             cerrarModal();
-            // Limpiar el dibujo del mapa
             if (drawnItems && layer) {
                 drawnItems.removeLayer(layer);
             }
-            // Recargar zonas
+            dibujando = false;
             if (typeof window.cargarRiesgos === 'function') {
                 window.cargarRiesgos();
             }
         } else {
             mostrarToast(`❌ ${data.error || 'Error al guardar'}`, 'error');
-            if (layer && drawnItems) {
-                drawnItems.removeLayer(layer);
-            }
         }
     } catch (error) {
         console.error('Error guardando zona:', error);
         mostrarToast('❌ Error de conexión', 'error');
-        if (layer && drawnItems) {
-            drawnItems.removeLayer(layer);
-        }
     }
-    
-    dibujando = false;
 }
 
 // =====================================================
@@ -401,13 +363,13 @@ function zoomIn() { if (mapa) mapa.zoomIn(); }
 function zoomOut() { if (mapa) mapa.zoomOut(); }
 
 // =====================================================
-// BOTONES QUE LLAMAN A MÓDULOS
+// BOTONES PARA FORMULARIOS (DELEGAR A MÓDULOS)
 // =====================================================
 function abrirFormularioMunicipio() {
     if (typeof window.abrirFormularioMunicipio === 'function') {
         window.abrirFormularioMunicipio();
     } else {
-        mostrarToast('⚠️ Módulo de municipios no disponible', 'warning');
+        mostrarToast('📝 Formulario de municipios en desarrollo', 'info');
     }
 }
 
@@ -415,7 +377,7 @@ function abrirFormularioUsuario() {
     if (typeof window.abrirFormularioUsuario === 'function') {
         window.abrirFormularioUsuario();
     } else {
-        mostrarToast('⚠️ Módulo de usuarios no disponible', 'warning');
+        mostrarToast('📝 Formulario de usuarios en desarrollo', 'info');
     }
 }
 
@@ -423,35 +385,33 @@ function abrirFormularioAlbergue() {
     if (typeof window.abrirFormularioAlbergue === 'function') {
         window.abrirFormularioAlbergue();
     } else {
-        mostrarToast('📝 Formulario de albergue en desarrollo', 'info');
+        mostrarToast('📝 Formulario de albergues en desarrollo', 'info');
     }
 }
 
 function seleccionarUbicacionMapa() {
-    if (typeof window.seleccionarUbicacionMapa === 'function') {
-        window.seleccionarUbicacionMapa();
-    } else {
-        mostrarToast('📍 Haz clic en el mapa para seleccionar ubicación', 'info');
-        if (!mapa) return;
-        const clickHandler = function(e) {
-            const { lat, lng } = e.latlng;
-            const input = document.getElementById('reporte-ubicacion');
-            if (input) input.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-            mostrarToast('✅ Ubicación seleccionada', 'success');
-            mapa.off('click', clickHandler);
-        };
-        mapa.on('click', clickHandler);
-    }
+    mostrarToast('📍 Haz clic en el mapa para seleccionar ubicación', 'info');
+    if (!mapa) return;
+    
+    const clickHandler = function(e) {
+        const { lat, lng } = e.latlng;
+        const input = document.getElementById('reporte-ubicacion');
+        if (input) input.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        mostrarToast('✅ Ubicación seleccionada', 'success');
+        mapa.off('click', clickHandler);
+    };
+    mapa.on('click', clickHandler);
 }
 
 // =====================================================
-// TABS
+// TABS - CARGA DE DATOS
 // =====================================================
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', function() {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         this.classList.add('active');
+        
         const tab = this.dataset.tab;
         const content = document.getElementById(`tab-${tab}`);
         if (content) content.classList.add('active');
@@ -480,15 +440,24 @@ async function initDashboard() {
     console.log('🚀 Iniciando Dashboard...');
     
     if (typeof verificarSesion === 'function') {
-        if (!verificarSesion()) { window.location.href = '/login.html'; return; }
+        if (!verificarSesion()) {
+            window.location.href = '/login.html';
+            return;
+        }
     } else {
         const token = localStorage.getItem('token');
         const user = localStorage.getItem('user');
-        if (!token || !user) { window.location.href = '/login.html'; return; }
+        if (!token || !user) {
+            window.location.href = '/login.html';
+            return;
+        }
     }
     
     const user = obtenerUsuario();
-    if (!user) { window.location.href = '/login.html'; return; }
+    if (!user) {
+        window.location.href = '/login.html';
+        return;
+    }
     
     initMapaDashboard();
     
