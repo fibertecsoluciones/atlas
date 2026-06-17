@@ -156,19 +156,16 @@ async function editarZona(id) {
         zonaEditandoId = id;
         
         // =============================================
-        // DIBUJAR EL POLÍGONO EXISTENTE EN EL MAPA
+        // 1. PRIMERO: DIBUJAR EL POLÍGONO EN EL MAPA
         // =============================================
-        // Limpiar polígono anterior si existe
         if (polygonEditando) {
             mapa.removeLayer(polygonEditando);
             polygonEditando = null;
         }
         
-        // Parsear el GeoJSON
         const geo = JSON.parse(zona.coordenadas_poligono);
         const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
         
-        // Crear polígono editable
         polygonEditando = L.polygon(coords, {
             color: '#3b82f6',
             weight: 4,
@@ -177,22 +174,26 @@ async function editarZona(id) {
             fillOpacity: 0.2
         }).addTo(mapa);
         
-        // Habilitar edición (arrastrar puntos)
-        polygonEditando.on('click', function() {
-            this.editing.enable();
-            mostrarToast('🔄 Arrastra los puntos para modificar el polígono', 'info');
-        });
-        
         // Centrar mapa en el polígono
         const bounds = polygonEditando.getBounds();
         mapa.fitBounds(bounds, { padding: [50, 50] });
         
         // =============================================
-        // MOSTRAR FORMULARIO DE EDICIÓN
+        // 2. ACTIVAR EDICIÓN AUTOMÁTICAMENTE
+        // =============================================
+        // Habilitar edición del polígono directamente
+        polygonEditando.editing.enable();
+        mostrarToast('🔄 Arrastra los puntos azules para modificar el polígono', 'info');
+        
+        // =============================================
+        // 3. AHORA SÍ, ABRIR EL MODAL (más pequeño y en una esquina)
         // =============================================
         modalTitulo.textContent = '✏️ Editar Zona de Riesgo';
         modalBody.innerHTML = `
             <form id="form-zona-edit" class="form-reporte">
+                <div style="background:#e0f2fe;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:0.8rem;color:#1e3a8a;">
+                    🖱️ Arrastra los puntos <strong>azules</strong> en el mapa para modificar el polígono
+                </div>
                 <div class="form-group">
                     <label>Nombre de la zona *</label>
                     <input type="text" id="z-edit-nombre" value="${zona.nombre}" required>
@@ -236,7 +237,11 @@ async function editarZona(id) {
             </form>
         `;
         
+        // IMPORTANTE: El modal se abre PERO el mapa sigue visible
         modalOverlay.style.display = 'flex';
+        // Hacer el modal más pequeño para no tapar todo el mapa
+        document.querySelector('.modal-content').style.maxWidth = '450px';
+        document.querySelector('.modal-content').style.maxHeight = '80vh';
         
         // Evento del formulario
         document.getElementById('form-zona-edit').addEventListener('submit', async function(e) {
@@ -244,14 +249,13 @@ async function editarZona(id) {
             await actualizarZonaConPoligono(id);
         });
         
-        mostrarToast('🔄 Haz clic en el polígono azul para editarlo', 'info');
+        mostrarToast('🟦 Arrastra los puntos azules en el mapa para modificar la zona', 'info');
         
     } catch (error) {
         console.error('❌ Error al cargar zona para editar:', error);
         mostrarToast('❌ Error al cargar los datos de la zona', 'error');
     }
 }
-
 // =====================================================
 // ACTUALIZAR ZONA CON POLÍGONO EDITADO
 // =====================================================
