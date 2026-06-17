@@ -116,7 +116,10 @@ function initMapaDashboard() {
         const slug = user.municipio?.slug || 'las-choapas';
         const centro = CENTROS_MUNICIPIOS[slug] || DEFAULT_CENTER;
         
-        mapa = L.map('mapa-dashboard').setView([centro.lat, centro.lng], centro.zoom || 13);
+        // Crear mapa SIN controles de zoom
+        mapa = L.map('mapa-dashboard', {
+            zoomControl: false  // ← ELIMINA LOS BOTONES DE ZOOM
+        }).setView([centro.lat, centro.lng], centro.zoom || 13);
         
         L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
             attribution: 'Map data &copy; Google',
@@ -124,7 +127,7 @@ function initMapaDashboard() {
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         }).addTo(mapa);
         
-        // Configurar Leaflet Draw
+        // Configurar Leaflet Draw (si lo necesitas)
         drawnItems = L.featureGroup().addTo(mapa);
         
         drawControl = new L.Control.Draw({
@@ -155,16 +158,13 @@ function initMapaDashboard() {
                 remove: true
             }
         });
-        
         mapa.addControl(drawControl);
         
         // Evento cuando se crea un dibujo
         mapa.on(L.Draw.Event.CREATED, function(event) {
             const layer = event.layer;
             const type = event.layerType;
-            
             drawnItems.addLayer(layer);
-            
             if (type === 'polygon' || type === 'rectangle') {
                 const latlngs = layer.getLatLngs()[0];
                 const coords = latlngs.map(c => [c.lng, c.lat]);
@@ -176,7 +176,6 @@ function initMapaDashboard() {
             }
         });
         
-        // Evento cuando se cancela el dibujo
         mapa.on(L.Draw.Event.DRAWSTOP, function() {
             dibujando = false;
         });

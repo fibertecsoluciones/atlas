@@ -701,3 +701,14 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: #2a3d5a;
 }
+
+/* Ocultar los controles de zoom de Leaflet */
+.leaflet-control-zoom {
+    display: none !important;
+}
+
+/* O si quieres ocultar solo los botones de zoom */
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+    display: none !important;
+}
