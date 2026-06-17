@@ -50,7 +50,7 @@ async function cargarRiesgos() {
 }
 
 // =====================================================
-// RENDERIZAR LISTA DE ZONAS
+// RENDERIZAR LISTA DE ZONAS CON CLICK PARA CENTRAR
 // =====================================================
 function renderizarListaRiesgos() {
     if (!listaRiesgos) return;
@@ -68,7 +68,7 @@ function renderizarListaRiesgos() {
     }
     
     listaRiesgos.innerHTML = riesgosData.map(r => `
-        <div class="riesgo-card">
+        <div class="riesgo-card" onclick="centrarEnZona(${r.id})" style="cursor:pointer;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <div>
                     <strong>⚠️ ${r.nombre}</strong>
@@ -77,11 +77,11 @@ function renderizarListaRiesgos() {
                     </span>
                 </div>
                 <div>
-                    <button onclick="editarZona(${r.id})" 
+                    <button onclick="event.stopPropagation();editarZona(${r.id})" 
                             style="background:#3b82f6;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;margin-left:5px;">
                         ✏️
                     </button>
-                    <button onclick="eliminarZona(${r.id})" 
+                    <button onclick="event.stopPropagation();eliminarZona(${r.id})" 
                             style="background:#dc2626;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;margin-left:5px;">
                         🗑️
                     </button>
