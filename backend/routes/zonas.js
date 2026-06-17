@@ -43,6 +43,40 @@ router.get('/', async (req, res) => {
 });
 
 // =====================================================
+// GET: Obtener una zona de riesgo por ID (NUEVA)
+// =====================================================
+router.get('/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const result = await pool.query(`
+            SELECT 
+                id, 
+                nombre, 
+                tipo, 
+                nivel, 
+                descripcion,
+                coordenadas_poligono,
+                poblacion_afectada,
+                viviendas_afectadas,
+                fecha_creacion
+            FROM zonas_riesgo
+            WHERE id = $1 AND municipio_id = $2
+        `, [id, req.municipioId]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Zona de riesgo no encontrada' });
+        }
+        
+        res.json(result.rows[0]);
+        
+    } catch (error) {
+        console.error('❌ Error en GET /zonas/:id:', error);
+        res.status(500).json({ error: 'Error al obtener zona de riesgo' });
+    }
+});
+
+// =====================================================
 // POST: Crear zona de riesgo (solo admin)
 // =====================================================
 router.post('/', authMiddleware, async (req, res) => {
@@ -106,8 +140,8 @@ router.post('/', authMiddleware, async (req, res) => {
             nivel || 'medio', 
             descripcion || '', 
             coordenadas_poligono,
-            poblacion,      // ← NUEVO
-            viviendas,      // ← NUEVO
+            poblacion,
+            viviendas,
             req.user.id
         ]);
         
@@ -122,6 +156,69 @@ router.post('/', authMiddleware, async (req, res) => {
     } catch (error) {
         console.error('❌ Error en POST /zonas:', error);
         res.status(500).json({ error: 'Error al crear zona de riesgo' });
+    }
+});
+
+// =====================================================
+// PUT: Actualizar zona de riesgo (NUEVA)
+// =====================================================
+router.put('/:id', authMiddleware, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { 
+            nombre, 
+            tipo, 
+            nivel, 
+            descripcion, 
+            poblacion_afectada,
+            viviendas_afectadas
+        } = req.body;
+        
+        // Verificar que la zona existe y pertenece al municipio
+        const checkResult = await pool.query(
+            'SELECT id FROM zonas_riesgo WHERE id = $1 AND municipio_id = $2',
+            [id, req.municipioId]
+        );
+        
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Zona de riesgo no encontrada' });
+        }
+        
+        const poblacion = parseInt(poblacion_afectada) || 0;
+        const viviendas = parseInt(viviendas_afectadas) || 0;
+        
+        const result = await pool.query(`
+            UPDATE zonas_riesgo 
+            SET 
+                nombre = $1,
+                tipo = $2,
+                nivel = $3,
+                descripcion = $4,
+                poblacion_afectada = $5,
+                viviendas_afectadas = $6,
+                fecha_actualizacion = NOW()
+            WHERE id = $7 AND municipio_id = $8
+            RETURNING id, nombre, tipo, nivel, poblacion_afectada, viviendas_afectadas
+        `, [
+            nombre, 
+            tipo, 
+            nivel, 
+            descripcion, 
+            poblacion, 
+            viviendas, 
+            id, 
+            req.municipioId
+        ]);
+        
+        res.json({
+            success: true,
+            mensaje: 'Zona de riesgo actualizada',
+            zona: result.rows[0]
+        });
+        
+    } catch (error) {
+        console.error('❌ Error en PUT /zonas/:id:', error);
+        res.status(500).json({ error: 'Error al actualizar zona de riesgo' });
     }
 });
 
