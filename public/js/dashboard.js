@@ -128,7 +128,7 @@ function initMapaDashboard() {
                     marker: false
                 },
                 edit: {
-                    featureGroup: featureGroup  // ← CORREGIDO
+                    featureGroup: featureGroup
                 }
             });
             mapa.addControl(drawingControl);
@@ -176,11 +176,56 @@ function zoomOut() { if (mapa) mapa.zoomOut(); }
 // BOTONES QUE LLAMAN A MÓDULOS
 // =====================================================
 function activarDibujoPoligono() {
-    if (typeof window.activarDibujoPoligono === 'function') {
-        window.activarDibujoPoligono();
-    } else {
-        mostrarToast('⚠️ Módulo de zonas no disponible', 'warning');
+    console.log('🖊️ Botón Dibujar presionado');
+    
+    // Verificar que el mapa existe
+    if (!mapa) {
+        mostrarToast('⚠️ El mapa no está cargado', 'warning');
+        return;
     }
+    
+    // Verificar que drawingControl existe
+    if (!drawingControl) {
+        mostrarToast('⚠️ Herramienta de dibujo no disponible', 'warning');
+        return;
+    }
+    
+    // Verificar que la función existe en zonas.js (solo llamar una vez)
+    if (typeof window.activarDibujoPoligono === 'function' && 
+        window.activarDibujoPoligono !== activarDibujoPoligono) {
+        window.activarDibujoPoligono();
+        return;
+    }
+    
+    // Implementación directa (sin recursión)
+    if (window.dibujando) {
+        mostrarToast('⚠️ Ya estás dibujando', 'warning');
+        return;
+    }
+    
+    window.dibujando = true;
+    mostrarToast('✏️ Dibuja un polígono en el mapa', 'info');
+    drawingControl.setDrawingMode('polygon');
+    
+    mapa.once('draw:created', function(e) {
+        const layer = e.layer;
+        const coords = layer.getLatLngs()[0];
+        const geojson = { type: 'Polygon', coordinates: [coords.map(c => [c.lng, c.lat])] };
+        window.dibujando = false;
+        
+        // Mostrar formulario
+        if (typeof window.mostrarFormularioZona === 'function') {
+            window.mostrarFormularioZona(geojson, layer);
+        } else {
+            mostrarToast('⚠️ Formulario no disponible', 'warning');
+            mapa.removeLayer(layer);
+        }
+    });
+    
+    mapa.once('draw:drawstop', function() {
+        window.dibujando = false;
+        mostrarToast('⏹️ Dibujo cancelado', 'info');
+    });
 }
 
 function abrirFormularioMunicipio() {
@@ -215,7 +260,8 @@ function seleccionarUbicacionMapa() {
         if (!mapa) return;
         const clickHandler = function(e) {
             const { lat, lng } = e.latlng;
-            document.getElementById('reporte-ubicacion').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+            const input = document.getElementById('reporte-ubicacion');
+            if (input) input.value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
             mostrarToast('✅ Ubicación seleccionada', 'success');
             mapa.off('click', clickHandler);
         };
@@ -232,13 +278,15 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         this.classList.add('active');
         const tab = this.dataset.tab;
-        document.getElementById(`tab-${tab}`).classList.add('active');
+        const content = document.getElementById(`tab-${tab}`);
+        if (content) content.classList.add('active');
         
-        if (tab === 'incidentes' && typeof cargarIncidentes === 'function') cargarIncidentes();
-        if (tab === 'albergues' && typeof cargarAlbergues === 'function') cargarAlbergues();
-        if (tab === 'riesgos' && typeof cargarRiesgos === 'function') cargarRiesgos();
-        if (tab === 'municipios' && typeof cargarMunicipiosAdmin === 'function') cargarMunicipiosAdmin();
-        if (tab === 'usuarios' && typeof cargarUsuarios === 'function') cargarUsuarios();
+        // Cargar datos al cambiar de tab
+        if (tab === 'incidentes' && typeof window.cargarIncidentes === 'function') window.cargarIncidentes();
+        if (tab === 'albergues' && typeof window.cargarAlbergues === 'function') window.cargarAlbergues();
+        if (tab === 'riesgos' && typeof window.cargarRiesgos === 'function') window.cargarRiesgos();
+        if (tab === 'municipios' && typeof window.cargarMunicipiosAdmin === 'function') window.cargarMunicipiosAdmin();
+        if (tab === 'usuarios' && typeof window.cargarUsuarios === 'function') window.cargarUsuarios();
     });
 });
 
@@ -267,16 +315,16 @@ async function initDashboard() {
     
     initMapaDashboard();
     
-    if (typeof cargarIncidentes === 'function') await cargarIncidentes();
-    if (typeof cargarAlbergues === 'function') await cargarAlbergues();
-    if (typeof cargarRiesgos === 'function') await cargarRiesgos();
+    if (typeof window.cargarIncidentes === 'function') await window.cargarIncidentes();
+    if (typeof window.cargarAlbergues === 'function') await window.cargarAlbergues();
+    if (typeof window.cargarRiesgos === 'function') await window.cargarRiesgos();
     
     console.log('✅ Dashboard iniciado correctamente');
     
     setInterval(() => {
-        if (typeof cargarIncidentes === 'function') cargarIncidentes();
-        if (typeof cargarAlbergues === 'function') cargarAlbergues();
-        if (typeof cargarRiesgos === 'function') cargarRiesgos();
+        if (typeof window.cargarIncidentes === 'function') window.cargarIncidentes();
+        if (typeof window.cargarAlbergues === 'function') window.cargarAlbergues();
+        if (typeof window.cargarRiesgos === 'function') window.cargarRiesgos();
     }, 30000);
 }
 

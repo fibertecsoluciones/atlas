@@ -2,7 +2,7 @@
 // LÓGICA DE INCIDENTES - SISTEMA ATLAS SAS
 // =====================================================
 
-// Referencias DOM
+// Referencias DOM - VERIFICAR QUE EXISTEN
 const municipioSelector = document.getElementById('municipio-selector');
 const tipoSeleccionado = document.getElementById('tipo-seleccionado');
 const descripcionInput = document.getElementById('descripcion');
@@ -11,8 +11,8 @@ const nombreInput = document.getElementById('nombre');
 const telefonoInput = document.getElementById('telefono');
 const btnEnviar = document.getElementById('btn-enviar');
 const loadingIncidenteDiv = document.getElementById('loading');
-const successIncidenteDiv = document.getElementById('success');  // ← RENOMBRADO
-const errorIncidenteDiv = document.getElementById('error');      // ← RENOMBRADO
+const successIncidenteDiv = document.getElementById('success');
+const errorIncidenteDiv = document.getElementById('error');
 
 // Estado
 let tipoActual = null;
@@ -21,6 +21,8 @@ let tipoActual = null;
 // CARGAR MUNICIPIOS
 // =====================================================
 async function cargarMunicipios() {
+    if (!municipioSelector) return;
+    
     try {
         const municipios = await api.obtenerMunicipios();
         
@@ -42,13 +44,14 @@ async function cargarMunicipios() {
 // =====================================================
 function initTiposEmergencia() {
     const tiposCards = document.querySelectorAll('.tipo-card');
+    if (!tiposCards.length) return;
     
     tiposCards.forEach(card => {
         card.addEventListener('click', function() {
             tiposCards.forEach(c => c.classList.remove('seleccionado'));
             this.classList.add('seleccionado');
             tipoActual = this.dataset.tipo;
-            tipoSeleccionado.value = tipoActual;
+            if (tipoSeleccionado) tipoSeleccionado.value = tipoActual;
         });
     });
 }
@@ -57,6 +60,11 @@ function initTiposEmergencia() {
 // ENVIAR REPORTE
 // =====================================================
 async function enviarReporte() {
+    if (!municipioSelector) {
+        alert('⚠️ Error: selector de municipio no disponible');
+        return;
+    }
+    
     const municipioSlug = municipioSelector.value;
     if (!municipioSlug) {
         alert('⚠️ Por favor, selecciona tu municipio');
@@ -68,6 +76,7 @@ async function enviarReporte() {
         return;
     }
     
+    if (!descripcionInput) return;
     const descripcion = descripcionInput.value.trim();
     if (!descripcion) {
         alert('⚠️ Por favor, describe la emergencia');
@@ -82,61 +91,63 @@ async function enviarReporte() {
     }
     
     // Deshabilitar botón y mostrar loading
-    btnEnviar.disabled = true;
-    loadingIncidenteDiv.style.display = 'block';
-    successIncidenteDiv.style.display = 'none';
-    errorIncidenteDiv.style.display = 'none';
+    if (btnEnviar) btnEnviar.disabled = true;
+    if (loadingIncidenteDiv) loadingIncidenteDiv.style.display = 'block';
+    if (successIncidenteDiv) successIncidenteDiv.style.display = 'none';
+    if (errorIncidenteDiv) errorIncidenteDiv.style.display = 'none';
     
     const datos = {
         latitud: ubicacion.lat,
         longitud: ubicacion.lng,
         tipo: tipoActual,
         descripcion: descripcion,
-        ciudadano_nombre: nombreInput.value.trim() || 'Anónimo',
-        ciudadano_telefono: telefonoInput.value.trim() || null
+        ciudadano_nombre: nombreInput ? nombreInput.value.trim() || 'Anónimo' : 'Anónimo',
+        ciudadano_telefono: telefonoInput ? telefonoInput.value.trim() || null : null
     };
     
     try {
         const result = await api.reportarIncidente(datos, municipioSlug);
         
         if (result.success || result.id) {
-            successIncidenteDiv.style.display = 'block';
+            if (successIncidenteDiv) successIncidenteDiv.style.display = 'block';
             
             // Limpiar formulario
-            descripcionInput.value = '';
-            nombreInput.value = '';
-            telefonoInput.value = '';
-            fotoInput.value = '';
+            if (descripcionInput) descripcionInput.value = '';
+            if (nombreInput) nombreInput.value = '';
+            if (telefonoInput) telefonoInput.value = '';
+            if (fotoInput) fotoInput.value = '';
             
             // Limpiar tipo seleccionado
             document.querySelectorAll('.tipo-card').forEach(c => c.classList.remove('seleccionado'));
             tipoActual = null;
-            tipoSeleccionado.value = '';
+            if (tipoSeleccionado) tipoSeleccionado.value = '';
             
             // Limpiar marcador
             if (window.limpiarSeleccion) {
                 window.limpiarSeleccion();
             }
-            btnEnviar.disabled = true;
-            btnEnviar.innerHTML = '📍 Selecciona una ubicación en el mapa';
+            if (btnEnviar) {
+                btnEnviar.disabled = true;
+                btnEnviar.innerHTML = '📍 Selecciona una ubicación en el mapa';
+            }
             
             setTimeout(() => {
-                successIncidenteDiv.style.display = 'none';
+                if (successIncidenteDiv) successIncidenteDiv.style.display = 'none';
             }, 5000);
         } else {
-            errorIncidenteDiv.style.display = 'block';
+            if (errorIncidenteDiv) errorIncidenteDiv.style.display = 'block';
             setTimeout(() => {
-                errorIncidenteDiv.style.display = 'none';
+                if (errorIncidenteDiv) errorIncidenteDiv.style.display = 'none';
             }, 5000);
         }
     } catch (error) {
-        errorIncidenteDiv.style.display = 'block';
+        if (errorIncidenteDiv) errorIncidenteDiv.style.display = 'block';
         setTimeout(() => {
-            errorIncidenteDiv.style.display = 'none';
+            if (errorIncidenteDiv) errorIncidenteDiv.style.display = 'none';
         }, 5000);
     } finally {
-        loadingIncidenteDiv.style.display = 'none';
-        btnEnviar.disabled = false;
+        if (loadingIncidenteDiv) loadingIncidenteDiv.style.display = 'none';
+        if (btnEnviar) btnEnviar.disabled = false;
     }
 }
 
@@ -144,24 +155,34 @@ async function enviarReporte() {
 // CALLBACK CUANDO SE SELECCIONA UBICACIÓN
 // =====================================================
 window.onUbicacionSeleccionada = (ubicacion) => {
-    btnEnviar.disabled = false;
-    btnEnviar.innerHTML = '🚨 Enviar Reporte de Emergencia';
+    if (btnEnviar) {
+        btnEnviar.disabled = false;
+        btnEnviar.innerHTML = '🚨 Enviar Reporte de Emergencia';
+    }
 };
 
 // =====================================================
 // CAMBIO DE MUNICIPIO
 // =====================================================
-municipioSelector.addEventListener('change', (e) => {
-    const slug = e.target.value;
-    if (slug && window.cambiarMunicipio) {
-        window.cambiarMunicipio(slug);
-    }
-});
+if (municipioSelector) {
+    municipioSelector.addEventListener('change', (e) => {
+        const slug = e.target.value;
+        if (slug && window.cambiarMunicipio) {
+            window.cambiarMunicipio(slug);
+        }
+    });
+}
 
 // =====================================================
-// INICIALIZAR
+// INICIALIZAR - SOLO SI ESTAMOS EN LA PÁGINA DE REPORTE
 // =====================================================
 function init() {
+    // Verificar que estamos en la página de reporte (tiene el formulario)
+    if (!document.getElementById('form-reporte') && !document.querySelector('.form-panel')) {
+        console.log('ℹ️ Incidentes.js: No estamos en la página de reporte, omitiendo inicialización');
+        return;
+    }
+    
     // Verificar que Leaflet está cargado
     if (typeof L === 'undefined') {
         console.log('Esperando Leaflet...');
@@ -169,7 +190,7 @@ function init() {
         return;
     }
     
-    // Inicializar mapa
+    // Inicializar mapa si existe
     if (window.iniciarMapa) {
         window.iniciarMapa();
     }
@@ -180,10 +201,12 @@ function init() {
     // Inicializar tipos de emergencia
     initTiposEmergencia();
     
-    // Evento del botón enviar
-    document.getElementById('btn-enviar').addEventListener('click', enviarReporte);
+    // Evento del botón enviar (solo si existe)
+    if (btnEnviar) {
+        btnEnviar.addEventListener('click', enviarReporte);
+    }
     
-    console.log('✅ Incidentes.js inicializado con Leaflet');
+    console.log('✅ Incidentes.js inicializado');
 }
 
 // Iniciar cuando el DOM esté listo
