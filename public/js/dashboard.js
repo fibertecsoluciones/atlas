@@ -92,6 +92,7 @@ function obtenerUsuario() {
     const userStr = localStorage.getItem('user');
     if (userStr) {
         userData = JSON.parse(userStr);
+        window.userData = userData; 
         if (userNameSpan) userNameSpan.textContent = `👤 ${userData.nombre || userData.email || 'Operador'}`;
         if (municipioBadge) municipioBadge.textContent = `📍 ${userData.municipio?.nombre || 'Sin municipio'}`;
         return userData;
