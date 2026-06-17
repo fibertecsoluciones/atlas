@@ -1,5 +1,5 @@
 // =====================================================
-// ZONAS DE RIESGO - MÓDULO COMPLETO (CON EDICIÓN FUNCIONAL)
+// ZONAS DE RIESGO - MÓDULO COMPLETO
 // =====================================================
 
 let riesgosData = [];
@@ -138,7 +138,7 @@ function renderizarMapaRiesgos() {
 }
 
 // =====================================================
-// EDITAR ZONA (CON LEAFLET DRAW)
+// PASO 1: EDITAR ZONA (SOLO POLÍGONO, SIN MODAL)
 // =====================================================
 async function editarZona(id) {
     try {
@@ -176,54 +176,24 @@ async function editarZona(id) {
         // Centrar mapa
         mapa.fitBounds(polygonEditando.getBounds(), { padding: [50, 50] });
         
-        // =============================================
-        // IMPORTANTE: Usar drawnItems de dashboard.js
-        // =============================================
-        if (window.drawnItems) {
-            window.drawnItems.addLayer(polygonEditando);
-            editLayer = window.drawnItems;
-        }
-        
-        // =============================================
-        // ACTIVAR EDICIÓN MANUAL (MÁS CONFIABLE)
-        // =============================================
+        // Activar edición manual (puntos arrastrables)
         polygonEditando.editing.enable();
         
         // =============================================
-        // ESCUCHAR EVENTO DE EDICIÓN
-        // =============================================
-        mapa.on('draw:edited', function(e) {
-            const layers = e.layers;
-            layers.eachLayer(function(layer) {
-                if (layer === polygonEditando) {
-                    console.log('✅ Polígono editado correctamente');
-                    mostrarToast('✅ Polígono actualizado. Haz clic en "💾 Guardar"', 'success');
-                }
-            });
-        });
-        
-        // =============================================
-        // ESCUCHAR EVENTO DE DIBUJO EDITADO (ALTERNATIVO)
-        // =============================================
-        mapa.on('editable:editing', function(e) {
-            console.log('✏️ Editando polígono...');
-        });
-        
-        // =============================================
-        // MOSTRAR BOTÓN GUARDAR
+        // MOSTRAR BOTÓN FLOTANTE CON DOS OPCIONES
         // =============================================
         mostrarBotonGuardarEdicion();
         
-        mostrarToast('🔄 Arrastra los puntos azules o usa los controles para editar. Luego haz clic en "💾 Guardar"', 'info');
+        mostrarToast('🔄 Arrastra los puntos azules para modificar el polígono', 'info');
         
     } catch (error) {
-        console.error('❌ Error al editar zona:', error);
-        mostrarToast('❌ Error al cargar zona para editar', 'error');
+        console.error('❌ Error al cargar zona para editar:', error);
+        mostrarToast('❌ Error al cargar los datos de la zona', 'error');
     }
 }
 
 // =====================================================
-// MOSTRAR BOTÓN GUARDAR EN EL MAPA
+// MOSTRAR BOTÓN GUARDAR EN EL MAPA (CON DOS OPCIONES)
 // =====================================================
 function mostrarBotonGuardarEdicion() {
     const btnAnterior = document.getElementById('btn-guardar-edicion');
@@ -231,14 +201,22 @@ function mostrarBotonGuardarEdicion() {
         btnAnterior.remove();
     }
     
-    const btnGuardar = document.createElement('button');
-    btnGuardar.id = 'btn-guardar-edicion';
-    btnGuardar.innerHTML = '💾 Guardar Cambios';
-    btnGuardar.style.cssText = `
+    const container = document.createElement('div');
+    container.id = 'btn-guardar-edicion';
+    container.style.cssText = `
         position: absolute;
         bottom: 100px;
         right: 20px;
         z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    `;
+    
+    // Botón principal: Guardar Directo
+    const btnGuardar = document.createElement('button');
+    btnGuardar.innerHTML = '💾 Guardar Cambios';
+    btnGuardar.style.cssText = `
         background: #10b981;
         color: white;
         border: none;
@@ -250,22 +228,53 @@ function mostrarBotonGuardarEdicion() {
         box-shadow: 0 4px 12px rgba(0,0,0,0.3);
         transition: all 0.3s;
     `;
+    btnGuardar.onmouseover = function() { this.style.transform = 'scale(1.05)'; };
+    btnGuardar.onmouseout = function() { this.style.transform = 'scale(1)'; };
     btnGuardar.onclick = function() {
-        guardarPoligonoEditado();
+        guardarPoligonoDirecto();
     };
+    
+    // Botón secundario: Guardar con Edición de Datos
+    const btnEditarDatos = document.createElement('button');
+    btnEditarDatos.innerHTML = '✏️ Editar Datos';
+    btnEditarDatos.style.cssText = `
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        transition: all 0.3s;
+    `;
+    btnEditarDatos.onmouseover = function() { this.style.transform = 'scale(1.05)'; };
+    btnEditarDatos.onmouseout = function() { this.style.transform = 'scale(1)'; };
+    btnEditarDatos.onclick = function() {
+        mostrarFormularioEdicion();
+    };
+    
+    container.appendChild(btnGuardar);
+    container.appendChild(btnEditarDatos);
     
     const mapContainer = document.querySelector('.map-container');
     if (mapContainer) {
-        mapContainer.appendChild(btnGuardar);
+        mapContainer.appendChild(container);
     }
 }
 
 // =====================================================
-// GUARDAR POLÍGONO EDITADO (DIRECTO, SIN MODAL)
+// OPCIÓN 1: GUARDAR DIRECTO (SOLO POLÍGONO)
 // =====================================================
-function guardarPoligonoEditado() {
-    if (!polygonEditando || !zonaEditandoData) {
+function guardarPoligonoDirecto() {
+    if (!polygonEditando) {
         mostrarToast('⚠️ No hay polígono para guardar', 'warning');
+        return;
+    }
+    
+    if (!zonaEditandoData) {
+        mostrarToast('⚠️ No hay datos de la zona', 'warning');
         return;
     }
     
@@ -279,14 +288,30 @@ function guardarPoligonoEditado() {
         coordinates: [coordenadas]
     };
     
-    // Mostrar formulario con los datos actuales
+    // Confirmar antes de guardar
+    if (!confirm(`¿Guardar cambios del polígono de "${zonaEditandoData.nombre}"?`)) {
+        return;
+    }
+    
+    guardarZonaEditada(zonaEditandoId, geojson, zonaEditandoData);
+}
+
+// =====================================================
+// OPCIÓN 2: GUARDAR CON EDICIÓN DE DATOS (FORMULARIO)
+// =====================================================
+function mostrarFormularioEdicion() {
+    if (!zonaEditandoData) {
+        mostrarToast('⚠️ No hay zona seleccionada', 'warning');
+        return;
+    }
+    
     const zona = zonaEditandoData;
     
-    modalTitulo.textContent = '✏️ Guardar Cambios de la Zona';
+    modalTitulo.textContent = '✏️ Editar Datos de la Zona';
     modalBody.innerHTML = `
         <form id="form-zona-edit" class="form-reporte">
             <div style="background:#e0f2fe;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:0.8rem;color:#1e3a8a;">
-                ✅ Polígono editado correctamente. Verifica los datos antes de guardar.
+                ✅ El polígono ya fue editado en el mapa. Puedes modificar los datos y guardar.
             </div>
             <div class="form-group">
                 <label>Nombre de la zona *</label>
@@ -335,14 +360,14 @@ function guardarPoligonoEditado() {
     
     document.getElementById('form-zona-edit').addEventListener('submit', async function(e) {
         e.preventDefault();
-        await actualizarZonaConPoligono(zonaEditandoId, geojson);
+        await guardarConDatosEditados(zonaEditandoId);
     });
 }
 
 // =====================================================
-// ACTUALIZAR ZONA CON POLÍGONO EDITADO
+// GUARDAR CON DATOS EDITADOS (FORMULARIO)
 // =====================================================
-async function actualizarZonaConPoligono(id, geojson) {
+async function guardarConDatosEditados(id) {
     const nombre = document.getElementById('z-edit-nombre').value.trim();
     const tipo = document.getElementById('z-edit-tipo').value;
     const nivel = document.getElementById('z-edit-nivel').value;
@@ -355,6 +380,31 @@ async function actualizarZonaConPoligono(id, geojson) {
         return;
     }
     
+    // Obtener coordenadas del polígono editado
+    if (!polygonEditando) {
+        mostrarToast('⚠️ No hay polígono para guardar', 'warning');
+        return;
+    }
+    
+    const latlngs = polygonEditando.getLatLngs()[0];
+    const coordenadas = latlngs.map(c => [c.lng, c.lat]);
+    coordenadas.push(coordenadas[0]);
+    
+    const geojson = {
+        type: 'Polygon',
+        coordinates: [coordenadas]
+    };
+    
+    const datosActualizados = {
+        nombre,
+        tipo,
+        nivel,
+        descripcion,
+        poblacion_afectada: poblacion,
+        viviendas_afectadas: viviendas,
+        coordenadas_poligono: JSON.stringify(geojson)
+    };
+    
     try {
         const res = await fetch(`/api/zonas/${id}`, {
             method: 'PUT',
@@ -363,15 +413,7 @@ async function actualizarZonaConPoligono(id, geojson) {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 'X-Municipio-Slug': userData?.municipio?.slug || 'las-choapas'
             },
-            body: JSON.stringify({
-                nombre,
-                tipo,
-                nivel,
-                descripcion,
-                poblacion_afectada: poblacion,
-                viviendas_afectadas: viviendas,
-                coordenadas_poligono: JSON.stringify(geojson)
-            })
+            body: JSON.stringify(datosActualizados)
         });
         
         const data = await res.json();
@@ -391,6 +433,44 @@ async function actualizarZonaConPoligono(id, geojson) {
 }
 
 // =====================================================
+// GUARDAR ZONA EDITADA (DIRECTO AL BACKEND)
+// =====================================================
+async function guardarZonaEditada(id, geojson, datos) {
+    try {
+        const res = await fetch(`/api/zonas/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'X-Municipio-Slug': userData?.municipio?.slug || 'las-choapas'
+            },
+            body: JSON.stringify({
+                nombre: datos.nombre,
+                tipo: datos.tipo,
+                nivel: datos.nivel,
+                descripcion: datos.descripcion || '',
+                poblacion_afectada: datos.poblacion_afectada || 0,
+                viviendas_afectadas: datos.viviendas_afectadas || 0,
+                coordenadas_poligono: JSON.stringify(geojson)
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            mostrarToast('✅ Polígono actualizado correctamente', 'success');
+            limpiarEdicion();
+            await cargarRiesgos();
+        } else {
+            mostrarToast(`❌ ${data.error || 'Error al guardar'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error guardando zona editada:', error);
+        mostrarToast('❌ Error de conexión', 'error');
+    }
+}
+
+// =====================================================
 // LIMPIAR EDICIÓN
 // =====================================================
 function limpiarEdicion() {
@@ -401,18 +481,9 @@ function limpiarEdicion() {
     zonaEditandoId = null;
     zonaEditandoData = null;
     
-    if (editLayer) {
-        editLayer.clearLayers();
-        editLayer = null;
-    }
-    
-    // Remover eventos de edición
-    mapa.off('draw:edited');
-    mapa.off('editable:editing');
-    
-    const btnGuardar = document.getElementById('btn-guardar-edicion');
-    if (btnGuardar) {
-        btnGuardar.remove();
+    const btnContainer = document.getElementById('btn-guardar-edicion');
+    if (btnContainer) {
+        btnContainer.remove();
     }
 }
 
