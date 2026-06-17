@@ -15,7 +15,8 @@ let editLayer = null;
 async function cargarRiesgos() {
     console.log('📡 Cargando zonas de riesgo...');
     
-    if (!userData?.municipio?.slug) {
+    // Usar window.userData en lugar de userData
+    if (!window.userData?.municipio?.slug) {
         console.warn('⚠️ No hay municipio seleccionado');
         return;
     }
@@ -23,7 +24,7 @@ async function cargarRiesgos() {
     try {
         const res = await fetch(`/api/zonas`, {
             headers: {
-                'X-Municipio-Slug': userData.municipio.slug,
+                'X-Municipio-Slug': window.userData.municipio.slug,
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
@@ -146,7 +147,7 @@ async function editarZona(id) {
         const res = await fetch(`/api/zonas/${id}`, {
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'X-Municipio-Slug': userData?.municipio?.slug || 'las-choapas'
+                'X-Municipio-Slug': window.userData?.municipio?.slug || 'las-choapas'
             }
         });
         
@@ -179,9 +180,7 @@ async function editarZona(id) {
         // Activar edición manual (puntos arrastrables)
         polygonEditando.editing.enable();
         
-        // =============================================
-        // MOSTRAR BOTÓN FLOTANTE CON DOS OPCIONES
-        // =============================================
+        // Mostrar botón flotante con dos opciones
         mostrarBotonGuardarEdicion();
         
         mostrarToast('🔄 Arrastra los puntos azules para modificar el polígono', 'info');
@@ -411,7 +410,7 @@ async function guardarConDatosEditados(id) {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'X-Municipio-Slug': userData?.municipio?.slug || 'las-choapas'
+                'X-Municipio-Slug': window.userData?.municipio?.slug || 'las-choapas'
             },
             body: JSON.stringify(datosActualizados)
         });
@@ -442,7 +441,7 @@ async function guardarZonaEditada(id, geojson, datos) {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'X-Municipio-Slug': userData?.municipio?.slug || 'las-choapas'
+                'X-Municipio-Slug': window.userData?.municipio?.slug || 'las-choapas'
             },
             body: JSON.stringify({
                 nombre: datos.nombre,
@@ -509,7 +508,7 @@ async function eliminarZona(id) {
             method: 'DELETE',
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'X-Municipio-Slug': userData?.municipio?.slug || 'las-choapas'
+                'X-Municipio-Slug': window.userData?.municipio?.slug || 'las-choapas'
             }
         });
         
