@@ -10,7 +10,7 @@ const fotoInput = document.getElementById('foto');
 const nombreInput = document.getElementById('nombre');
 const telefonoInput = document.getElementById('telefono');
 const btnEnviar = document.getElementById('btn-enviar');
-const loadingDiv = document.getElementById('loading');
+const loadingIncidenteDiv = document.getElementById('loading'); // ← RENOMBRADO
 const successDiv = document.getElementById('success');
 const errorDiv = document.getElementById('error');
 
@@ -83,7 +83,7 @@ async function enviarReporte() {
     
     // Deshabilitar botón y mostrar loading
     btnEnviar.disabled = true;
-    loadingDiv.style.display = 'block';
+    loadingIncidenteDiv.style.display = 'block'; // ← RENOMBRADO
     successDiv.style.display = 'none';
     errorDiv.style.display = 'none';
     
@@ -135,7 +135,7 @@ async function enviarReporte() {
             errorDiv.style.display = 'none';
         }, 5000);
     } finally {
-        loadingDiv.style.display = 'none';
+        loadingIncidenteDiv.style.display = 'none'; // ← RENOMBRADO
         btnEnviar.disabled = false;
     }
 }

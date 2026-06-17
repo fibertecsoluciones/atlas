@@ -5,7 +5,6 @@
 let mapa = null;
 let userData = null;
 let drawingControl = null;
-let dibujando = false;
 
 // =====================================================
 // REFERENCIAS DOM
