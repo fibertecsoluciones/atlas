@@ -43,7 +43,7 @@ router.get('/', async (req, res) => {
 });
 
 // =====================================================
-// GET: Obtener una zona de riesgo por ID (NUEVA)
+// GET: Obtener una zona de riesgo por ID
 // =====================================================
 router.get('/:id', async (req, res) => {
     try {
@@ -94,14 +94,12 @@ router.post('/', authMiddleware, async (req, res) => {
             viviendas_afectadas
         } = req.body;
         
-        // Validaciones
         if (!nombre || !coordenadas_poligono) {
             return res.status(400).json({ 
                 error: 'Nombre y coordenadas del polígono son requeridos' 
             });
         }
         
-        // Validar GeoJSON
         try {
             const geo = JSON.parse(coordenadas_poligono);
             if (geo.type !== 'Polygon' && geo.type !== 'MultiPolygon') {
@@ -113,7 +111,6 @@ router.post('/', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'Formato GeoJSON inválido' });
         }
         
-        // Asegurar que los valores sean números
         const poblacion = parseInt(poblacion_afectada) || 0;
         const viviendas = parseInt(viviendas_afectadas) || 0;
         
@@ -160,7 +157,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // =====================================================
-// PUT: Actualizar zona de riesgo (NUEVA)
+// PUT: Actualizar zona de riesgo (CON coordenadas_poligono)
 // =====================================================
 router.put('/:id', authMiddleware, async (req, res) => {
     try {
@@ -171,10 +168,14 @@ router.put('/:id', authMiddleware, async (req, res) => {
             nivel, 
             descripcion, 
             poblacion_afectada,
-            viviendas_afectadas
+            viviendas_afectadas,
+            coordenadas_poligono  // ← AHORA SE RECIBE
         } = req.body;
         
-        // Verificar que la zona existe y pertenece al municipio
+        console.log('📝 Actualizando zona ID:', id);
+        console.log('📦 Datos recibidos:', req.body);
+        
+        // Verificar que la zona existe
         const checkResult = await pool.query(
             'SELECT id FROM zonas_riesgo WHERE id = $1 AND municipio_id = $2',
             [id, req.municipioId]
@@ -182,6 +183,20 @@ router.put('/:id', authMiddleware, async (req, res) => {
         
         if (checkResult.rows.length === 0) {
             return res.status(404).json({ error: 'Zona de riesgo no encontrada' });
+        }
+        
+        // Validar GeoJSON si se envía
+        if (coordenadas_poligono) {
+            try {
+                const geo = JSON.parse(coordenadas_poligono);
+                if (geo.type !== 'Polygon' && geo.type !== 'MultiPolygon') {
+                    return res.status(400).json({ 
+                        error: 'El GeoJSON debe ser de tipo Polygon o MultiPolygon' 
+                    });
+                }
+            } catch (e) {
+                return res.status(400).json({ error: 'Formato GeoJSON inválido' });
+            }
         }
         
         const poblacion = parseInt(poblacion_afectada) || 0;
@@ -196,8 +211,9 @@ router.put('/:id', authMiddleware, async (req, res) => {
                 descripcion = $4,
                 poblacion_afectada = $5,
                 viviendas_afectadas = $6,
+                coordenadas_poligono = $7,  ← ← ← AHORA SE ACTUALIZA
                 fecha_actualizacion = NOW()
-            WHERE id = $7 AND municipio_id = $8
+            WHERE id = $8 AND municipio_id = $9
             RETURNING id, nombre, tipo, nivel, poblacion_afectada, viviendas_afectadas
         `, [
             nombre, 
@@ -206,9 +222,12 @@ router.put('/:id', authMiddleware, async (req, res) => {
             descripcion, 
             poblacion, 
             viviendas, 
+            coordenadas_poligono,  // ← ENVIAMOS EL NUEVO POLÍGONO
             id, 
             req.municipioId
         ]);
+        
+        console.log('✅ Zona actualizada:', result.rows[0]);
         
         res.json({
             success: true,

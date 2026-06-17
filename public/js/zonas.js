@@ -242,8 +242,11 @@ function guardarPoligonoDirecto() {
         return;
     }
     
+    // =============================================
+    // OBTENER PUNTOS ACTUALES DIRECTAMENTE DEL MAPA
+    // =============================================
     try {
-        // Obtener puntos actuales del polígono
+        // Obtener los puntos actuales del polígono (ya editados)
         const latlngs = polygonEditando.getLatLngs()[0];
         
         if (!latlngs || latlngs.length < 3) {
@@ -251,9 +254,9 @@ function guardarPoligonoDirecto() {
             return;
         }
         
-        console.log('📍 Puntos del polígono:', latlngs);
+        console.log('📍 Puntos actuales del polígono:', latlngs);
         
-        // Convertir a coordenadas [lng, lat]
+        // Convertir a [lng, lat]
         const coordenadas = latlngs.map(c => [c.lng, c.lat]);
         coordenadas.push(coordenadas[0]); // Cerrar polígono
         
@@ -264,15 +267,17 @@ function guardarPoligonoDirecto() {
         
         console.log('📦 GeoJSON a guardar:', JSON.stringify(geojson));
         
+        // Mostrar confirmación
         if (!confirm(`¿Guardar cambios del polígono de "${zonaEditandoData.nombre}"?`)) {
             return;
         }
         
+        // Llamar a la función de guardado
         guardarZonaEditada(zonaEditandoId, geojson, zonaEditandoData);
         
     } catch (error) {
-        console.error('❌ Error al obtener coordenadas del polígono:', error);
-        mostrarToast('❌ Error al leer el polígono', 'error');
+        console.error('❌ Error al obtener coordenadas:', error);
+        mostrarToast('❌ Error al leer el polígono editado', 'error');
     }
 }
 
