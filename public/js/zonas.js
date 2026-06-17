@@ -1,11 +1,12 @@
 // =====================================================
-// ZONAS DE RIESGO - MÓDULO COMPLETO
+// ZONAS DE RIESGO - MÓDULO COMPLETO (VERSIÓN CORREGIDA)
 // =====================================================
 
 let riesgosData = [];
 let poligonosRiesgo = [];
 let polygonEditando = null;
 let zonaEditandoId = null;
+let zonaEditandoData = null;
 
 // =====================================================
 // CARGAR ZONAS DE RIESGO
@@ -136,7 +137,7 @@ function renderizarMapaRiesgos() {
 }
 
 // =====================================================
-// EDITAR ZONA DE RIESGO (CON POLÍGONO EDITABLE)
+// PASO 1: EDITAR ZONA (SOLO POLÍGONO, SIN MODAL)
 // =====================================================
 async function editarZona(id) {
     try {
@@ -154,15 +155,15 @@ async function editarZona(id) {
         
         const zona = await res.json();
         zonaEditandoId = id;
+        zonaEditandoData = zona;
         
-        // =============================================
-        // 1. PRIMERO: DIBUJAR EL POLÍGONO EN EL MAPA
-        // =============================================
+        // Limpiar polígono anterior
         if (polygonEditando) {
             mapa.removeLayer(polygonEditando);
             polygonEditando = null;
         }
         
+        // Dibujar el polígono existente
         const geo = JSON.parse(zona.coordenadas_poligono);
         const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
         
@@ -178,84 +179,134 @@ async function editarZona(id) {
         const bounds = polygonEditando.getBounds();
         mapa.fitBounds(bounds, { padding: [50, 50] });
         
-        // =============================================
-        // 2. ACTIVAR EDICIÓN AUTOMÁTICAMENTE
-        // =============================================
-        // Habilitar edición del polígono directamente
+        // Activar edición del polígono (puntos arrastrables)
         polygonEditando.editing.enable();
-        mostrarToast('🔄 Arrastra los puntos azules para modificar el polígono', 'info');
         
         // =============================================
-        // 3. AHORA SÍ, ABRIR EL MODAL (más pequeño y en una esquina)
+        // MOSTRAR BOTÓN PARA GUARDAR EN LA ESQUINA
         // =============================================
-        modalTitulo.textContent = '✏️ Editar Zona de Riesgo';
-        modalBody.innerHTML = `
-            <form id="form-zona-edit" class="form-reporte">
-                <div style="background:#e0f2fe;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:0.8rem;color:#1e3a8a;">
-                    🖱️ Arrastra los puntos <strong>azules</strong> en el mapa para modificar el polígono
-                </div>
-                <div class="form-group">
-                    <label>Nombre de la zona *</label>
-                    <input type="text" id="z-edit-nombre" value="${zona.nombre}" required>
-                </div>
-                <div class="form-group">
-                    <label>Tipo de riesgo</label>
-                    <select id="z-edit-tipo">
-                        <option value="inundacion" ${zona.tipo === 'inundacion' ? 'selected' : ''}>🌊 Inundación</option>
-                        <option value="deslizamiento" ${zona.tipo === 'deslizamiento' ? 'selected' : ''}>⛰️ Deslizamiento</option>
-                        <option value="incendio" ${zona.tipo === 'incendio' ? 'selected' : ''}>🔥 Incendio</option>
-                        <option value="sismo" ${zona.tipo === 'sismo' ? 'selected' : ''}>🌍 Sismo</option>
-                        <option value="vendaval" ${zona.tipo === 'vendaval' ? 'selected' : ''}>💨 Vendaval</option>
-                        <option value="otro" ${zona.tipo === 'otro' ? 'selected' : ''}>⚠️ Otro</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Nivel de riesgo</label>
-                    <select id="z-edit-nivel">
-                        <option value="critico" ${zona.nivel === 'critico' ? 'selected' : ''}>🔴 Crítico</option>
-                        <option value="alto" ${zona.nivel === 'alto' ? 'selected' : ''}>🟠 Alto</option>
-                        <option value="medio" ${zona.nivel === 'medio' ? 'selected' : ''}>🟡 Medio</option>
-                        <option value="bajo" ${zona.nivel === 'bajo' ? 'selected' : ''}>🟢 Bajo</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Descripción</label>
-                    <textarea id="z-edit-descripcion" rows="2">${zona.descripcion || ''}</textarea>
-                </div>
-                <div class="form-group">
-                    <label>Población afectada</label>
-                    <input type="number" id="z-edit-poblacion" value="${zona.poblacion_afectada || 0}" min="0">
-                </div>
-                <div class="form-group">
-                    <label>Viviendas afectadas</label>
-                    <input type="number" id="z-edit-viviendas" value="${zona.viviendas_afectadas || 0}" min="0">
-                </div>
-                <div style="display:flex;gap:10px;margin-top:10px;">
-                    <button type="submit" class="btn-enviar" style="flex:1;">💾 Guardar Cambios</button>
-                    <button type="button" class="btn-enviar" style="flex:1;background:#6b7280;" onclick="cancelarEdicionPoligono()">❌ Cancelar</button>
-                </div>
-            </form>
-        `;
+        mostrarBotonGuardarEdicion();
         
-        // IMPORTANTE: El modal se abre PERO el mapa sigue visible
-        modalOverlay.style.display = 'flex';
-        // Hacer el modal más pequeño para no tapar todo el mapa
-        document.querySelector('.modal-content').style.maxWidth = '450px';
-        document.querySelector('.modal-content').style.maxHeight = '80vh';
-        
-        // Evento del formulario
-        document.getElementById('form-zona-edit').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            await actualizarZonaConPoligono(id);
-        });
-        
-        mostrarToast('🟦 Arrastra los puntos azules en el mapa para modificar la zona', 'info');
+        mostrarToast('🔄 Arrastra los puntos azules para modificar el polígono. Luego haz clic en "💾 Guardar"', 'info');
         
     } catch (error) {
         console.error('❌ Error al cargar zona para editar:', error);
         mostrarToast('❌ Error al cargar los datos de la zona', 'error');
     }
 }
+
+// =====================================================
+// MOSTRAR BOTÓN GUARDAR EN EL MAPA
+// =====================================================
+function mostrarBotonGuardarEdicion() {
+    // Eliminar botón anterior si existe
+    const btnAnterior = document.getElementById('btn-guardar-edicion');
+    if (btnAnterior) {
+        btnAnterior.remove();
+    }
+    
+    // Crear botón flotante
+    const btnGuardar = document.createElement('button');
+    btnGuardar.id = 'btn-guardar-edicion';
+    btnGuardar.innerHTML = '💾 Guardar Cambios';
+    btnGuardar.style.cssText = `
+        position: absolute;
+        bottom: 100px;
+        right: 20px;
+        z-index: 1000;
+        background: #10b981;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        transition: all 0.3s;
+    `;
+    btnGuardar.onmouseover = function() {
+        this.style.transform = 'scale(1.05)';
+    };
+    btnGuardar.onmouseout = function() {
+        this.style.transform = 'scale(1)';
+    };
+    btnGuardar.onclick = function() {
+        mostrarFormularioEdicion();
+    };
+    
+    // Agregar al contenedor del mapa
+    const mapContainer = document.querySelector('.map-container');
+    if (mapContainer) {
+        mapContainer.appendChild(btnGuardar);
+    }
+}
+
+// =====================================================
+// PASO 2: MOSTRAR FORMULARIO PARA GUARDAR
+// =====================================================
+function mostrarFormularioEdicion() {
+    if (!zonaEditandoData) {
+        mostrarToast('⚠️ No hay zona seleccionada para editar', 'warning');
+        return;
+    }
+    
+    const zona = zonaEditandoData;
+    
+    modalTitulo.textContent = '✏️ Guardar Cambios de la Zona';
+    modalBody.innerHTML = `
+        <form id="form-zona-edit" class="form-reporte">
+            <div class="form-group">
+                <label>Nombre de la zona *</label>
+                <input type="text" id="z-edit-nombre" value="${zona.nombre}" required>
+            </div>
+            <div class="form-group">
+                <label>Tipo de riesgo</label>
+                <select id="z-edit-tipo">
+                    <option value="inundacion" ${zona.tipo === 'inundacion' ? 'selected' : ''}>🌊 Inundación</option>
+                    <option value="deslizamiento" ${zona.tipo === 'deslizamiento' ? 'selected' : ''}>⛰️ Deslizamiento</option>
+                    <option value="incendio" ${zona.tipo === 'incendio' ? 'selected' : ''}>🔥 Incendio</option>
+                    <option value="sismo" ${zona.tipo === 'sismo' ? 'selected' : ''}>🌍 Sismo</option>
+                    <option value="vendaval" ${zona.tipo === 'vendaval' ? 'selected' : ''}>💨 Vendaval</option>
+                    <option value="otro" ${zona.tipo === 'otro' ? 'selected' : ''}>⚠️ Otro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Nivel de riesgo</label>
+                <select id="z-edit-nivel">
+                    <option value="critico" ${zona.nivel === 'critico' ? 'selected' : ''}>🔴 Crítico</option>
+                    <option value="alto" ${zona.nivel === 'alto' ? 'selected' : ''}>🟠 Alto</option>
+                    <option value="medio" ${zona.nivel === 'medio' ? 'selected' : ''}>🟡 Medio</option>
+                    <option value="bajo" ${zona.nivel === 'bajo' ? 'selected' : ''}>🟢 Bajo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea id="z-edit-descripcion" rows="2">${zona.descripcion || ''}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Población afectada</label>
+                <input type="number" id="z-edit-poblacion" value="${zona.poblacion_afectada || 0}" min="0">
+            </div>
+            <div class="form-group">
+                <label>Viviendas afectadas</label>
+                <input type="number" id="z-edit-viviendas" value="${zona.viviendas_afectadas || 0}" min="0">
+            </div>
+            <div style="display:flex;gap:10px;margin-top:10px;">
+                <button type="submit" class="btn-enviar" style="flex:1;">💾 Guardar Cambios</button>
+                <button type="button" class="btn-enviar" style="flex:1;background:#6b7280;" onclick="cancelarEdicionPoligono()">❌ Cancelar</button>
+            </div>
+        </form>
+    `;
+    
+    modalOverlay.style.display = 'flex';
+    
+    document.getElementById('form-zona-edit').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await actualizarZonaConPoligono(zonaEditandoId);
+    });
+}
+
 // =====================================================
 // ACTUALIZAR ZONA CON POLÍGONO EDITADO
 // =====================================================
@@ -272,9 +323,7 @@ async function actualizarZonaConPoligono(id) {
         return;
     }
     
-    // =============================================
-    // OBTENER LAS COORDENADAS DEL POLÍGONO EDITADO
-    // =============================================
+    // Obtener coordenadas del polígono editado
     let coordenadas = null;
     
     if (polygonEditando) {
@@ -315,11 +364,7 @@ async function actualizarZonaConPoligono(id) {
         if (res.ok) {
             mostrarToast('✅ Zona actualizada correctamente', 'success');
             cerrarModal();
-            if (polygonEditando) {
-                mapa.removeLayer(polygonEditando);
-                polygonEditando = null;
-            }
-            zonaEditandoId = null;
+            limpiarEdicion();
             await cargarRiesgos();
         } else {
             mostrarToast(`❌ ${data.error || 'Error al actualizar'}`, 'error');
@@ -331,14 +376,27 @@ async function actualizarZonaConPoligono(id) {
 }
 
 // =====================================================
-// CANCELAR EDICIÓN DE POLÍGONO
+// LIMPIAR EDICIÓN
 // =====================================================
-function cancelarEdicionPoligono() {
+function limpiarEdicion() {
     if (polygonEditando) {
         mapa.removeLayer(polygonEditando);
         polygonEditando = null;
     }
     zonaEditandoId = null;
+    zonaEditandoData = null;
+    
+    const btnGuardar = document.getElementById('btn-guardar-edicion');
+    if (btnGuardar) {
+        btnGuardar.remove();
+    }
+}
+
+// =====================================================
+// CANCELAR EDICIÓN
+// =====================================================
+function cancelarEdicionPoligono() {
+    limpiarEdicion();
     cerrarModal();
     mostrarToast('⏹️ Edición cancelada', 'info');
 }
