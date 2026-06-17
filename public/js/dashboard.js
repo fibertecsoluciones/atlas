@@ -1,5 +1,5 @@
 // =====================================================
-// DASHBOARD - LÓGICA COMPLETA (LEAFLET)
+// DASHBOARD - SISTEMA ATLAS SAS
 // =====================================================
 
 let mapa = null;
@@ -11,7 +11,6 @@ let alberguesData = [];
 let riesgosData = [];
 let userData = null;
 let selectedUbicacion = null;
-let drawingControl = null;
 
 // =====================================================
 // REFERENCIAS DOM
@@ -27,19 +26,20 @@ const statsHoy = document.getElementById('stats-hoy');
 const listaIncidentes = document.getElementById('lista-incidentes');
 const listaAlbergues = document.getElementById('lista-albergues');
 const listaRiesgos = document.getElementById('lista-riesgos');
-const modalOverlay = document.getElementById('modal-overlay');
-const modalBody = document.getElementById('modal-body');
-const modalTitulo = document.getElementById('modal-titulo');
 const toastContainer = document.getElementById('toast-container');
 
 // =====================================================
-// CONFIGURACIÓN DEL MAPA
+// CONFIGURACIÓN
 // =====================================================
 const CENTRO = [17.9117, -94.0958];
-const GOOGLE_TILES = 'https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}';
+const DEFAULT_CENTER = { lat: 17.9117, lng: -94.0958, zoom: 13 };
+const CENTROS_MUNICIPIOS = {
+    'las-choapas': { lat: 17.9117, lng: -94.0958, zoom: 13 },
+    'moloacan': { lat: 17.9842, lng: -94.3467, zoom: 14 }
+};
 
 // =====================================================
-// FUNCIONES DE ICONOS (Emojis)
+// FUNCIONES DE ICONOS
 // =====================================================
 function crearIconoEmoji(emoji, color, tamaño = 36, fondo = true) {
     const fondoStyle = fondo ? `
@@ -78,8 +78,6 @@ function getEmojiPorTipo(tipo, prioridad) {
     else if (t.includes('deslizamiento')) { emoji = '⛰️'; color = '#795548'; tamaño = 38; }
     else if (t.includes('accidente')) { emoji = '🚗'; color = '#F44336'; tamaño = 38; }
     else if (t.includes('arbol')) { emoji = '🌳'; color = '#4CAF50'; tamaño = 36; }
-    else if (t.includes('gas')) { emoji = '⛽'; color = '#FF6D00'; tamaño = 40; }
-    else if (t.includes('sismo')) { emoji = '🌍'; color = '#9C27B0'; tamaño = 38; }
     
     if (prioridad === 1) { tamaño += 6; color = '#F44336'; }
     else if (prioridad === 2) { tamaño += 2; color = '#FF9800'; }
@@ -93,6 +91,28 @@ function getIconoAlbergue(ocupacion, capacidad) {
     if (porcentaje > 80) color = '#FF9800';
     if (porcentaje >= 100) color = '#F44336';
     return crearIconoEmoji('🏠', color, 38, true);
+}
+
+function getEstadoTexto(estado) {
+    const estados = {
+        pendiente: 'Pendiente',
+        en_proceso: 'En proceso',
+        en_revision: 'En revisión',
+        resuelto: 'Resuelto',
+        cancelado: 'Cancelado'
+    };
+    return estados[estado] || estado;
+}
+
+function formatFecha(fecha) {
+    const date = new Date(fecha);
+    const ahora = new Date();
+    const diff = Math.floor((ahora - date) / 1000 / 60);
+    
+    if (diff < 1) return 'hace segundos';
+    if (diff < 60) return `hace ${diff} minutos`;
+    if (diff < 1440) return `hace ${Math.floor(diff / 60)} horas`;
+    return `hace ${Math.floor(diff / 1440)} días`;
 }
 
 // =====================================================
@@ -110,90 +130,41 @@ function obtenerUsuario() {
 }
 
 // =====================================================
-// INICIALIZAR MAPA
+// INICIALIZAR MAPA (LEAFLET)
 // =====================================================
-function initMapa() {
-    if (mapa) { mapa.remove(); mapa = null; }
-    
-    mapa = L.map('mapa-dashboard').setView(CENTRO, 13);
-    
-    L.tileLayer(GOOGLE_TILES, {
-        attribution: 'Map data &copy; Google',
-        maxZoom: 20,
-        subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
-    }).addTo(mapa);
-    
-    // Herramienta de dibujo
-    drawingControl = new L.Control.Draw({
-        draw: {
-            polygon: { allowIntersection: false, showArea: true },
-            rectangle: true,
-            circle: false,
-            polyline: false,
-            marker: false
-        },
-        edit: { featureGroup: null }
-    });
-    mapa.addControl(drawingControl);
-    
-    mapa.on('draw:created', function(e) {
-        const layer = e.layer;
-        const coords = layer.getLatLngs()[0];
-        const geojson = {
-            type: 'Polygon',
-            coordinates: [coords.map(c => [c.lng, c.lat])]
-        };
-        guardarZonaRiesgo(geojson, layer);
-    });
-    
-    marcadores = [];
-    marcadoresAlbergues = [];
-    poligonosRiesgo = [];
-}
-
-// =====================================================
-// GUARDAR ZONA DE RIESGO DESDE DIBUJO
-// =====================================================
-async function guardarZonaRiesgo(geojson, layer) {
-    const nombre = prompt('Nombre de la zona de riesgo:');
-    if (!nombre) { mapa.removeLayer(layer); return; }
-    
-    const tipo = prompt('Tipo (inundacion, deslizamiento, incendio, sismo, vendaval, otoro):') || 'otro';
-    const nivel = prompt('Nivel (critico, alto, medio, bajo):') || 'medio';
-    
+function initMapaDashboard() {
     try {
-        const res = await fetch('/api/zonas', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'X-Municipio-Slug': userData?.municipio?.slug || 'las-choapas'
-            },
-            body: JSON.stringify({ nombre, tipo, nivel, coordenadas_poligono: JSON.stringify(geojson) })
-        });
+        console.log('🗺️ Creando mapa...');
         
-        if (res.ok) {
-            mostrarToast('✅ Zona de riesgo guardada', 'success');
-            await cargarRiesgos();
-        } else {
-            mostrarToast('❌ Error al guardar', 'error');
-            mapa.removeLayer(layer);
+        if (mapa) {
+            mapa.remove();
+            mapa = null;
         }
+        
+        const user = JSON.parse(localStorage.getItem('user') || '{}');
+        const slug = user.municipio?.slug || 'las-choapas';
+        const centro = CENTROS_MUNICIPIOS[slug] || DEFAULT_CENTER;
+        
+        console.log('📍 Centro del mapa:', centro);
+        
+        mapa = L.map('mapa-dashboard').setView([centro.lat, centro.lng], centro.zoom || 13);
+        
+        L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            attribution: 'Map data &copy; Google',
+            maxZoom: 20,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        }).addTo(mapa);
+        
+        setTimeout(() => {
+            mapa.invalidateSize();
+        }, 500);
+        
+        console.log('✅ Mapa inicializado correctamente');
+        window.mapa = mapa;
+        
     } catch (error) {
-        mostrarToast('❌ Error de conexión', 'error');
-        mapa.removeLayer(layer);
+        console.error('❌ Error al crear mapa:', error);
     }
-}
-
-// =====================================================
-// FUNCIONES DE TOAST
-// =====================================================
-function mostrarToast(mensaje, tipo = 'info') {
-    const toast = document.createElement('div');
-    toast.className = `toast ${tipo}`;
-    toast.textContent = mensaje;
-    toastContainer.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
 }
 
 // =====================================================
@@ -210,12 +181,10 @@ async function cargarIncidentes() {
         
         const activos = incidentesData.filter(i => i.estado !== 'resuelto').length;
         const enProceso = incidentesData.filter(i => i.estado === 'en_proceso').length;
-        const resueltos = incidentesData.filter(i => i.estado === 'resuelto').length;
         const hoy = incidentesData.filter(i => new Date(i.fecha_reporte).toDateString() === new Date().toDateString()).length;
         
         if (statsActivos) statsActivos.textContent = activos;
         if (statsProceso) statsProceso.textContent = enProceso;
-        if (statsResueltos) statsResueltos.textContent = resueltos;
         if (statsHoy) statsHoy.textContent = hoy;
         
         actualizarListaIncidentes();
@@ -229,20 +198,13 @@ async function cargarIncidentes() {
 function actualizarListaIncidentes() {
     if (!listaIncidentes) return;
     
-    const filtroEstado = document.getElementById('filtro-estado')?.value || 'todos';
-    const filtroTipo = document.getElementById('filtro-tipo')?.value || 'todos';
-    
-    let filtrados = incidentesData;
-    if (filtroEstado !== 'todos') filtrados = filtrados.filter(i => i.estado === filtroEstado);
-    if (filtroTipo !== 'todos') filtrados = filtrados.filter(i => i.tipo === filtroTipo);
-    
-    if (filtrados.length === 0) {
+    if (incidentesData.length === 0) {
         listaIncidentes.innerHTML = '<div class="loading-spinner">No hay incidentes</div>';
         return;
     }
     
-    listaIncidentes.innerHTML = filtrados.map(inc => `
-        <div class="incidente-card prioridad-${inc.prioridad}" onclick="centrarEnIncidente(${inc.latitud}, ${inc.longitud})">
+    listaIncidentes.innerHTML = incidentesData.map(inc => `
+        <div class="incidente-card prioridad-${inc.prioridad}">
             <div class="incidente-tipo">
                 <span>${getEmojiPorTipo(inc.tipo, inc.prioridad).emoji} ${inc.tipo.toUpperCase()}</span>
                 <span class="estado-badge estado-${inc.estado}">${getEstadoTexto(inc.estado)}</span>
@@ -252,8 +214,6 @@ function actualizarListaIncidentes() {
         </div>
     `).join('');
 }
-
-function filtrarIncidentes() { actualizarListaIncidentes(); }
 
 function actualizarMapaIncidentes() {
     if (!mapa) return;
@@ -266,20 +226,7 @@ function actualizarMapaIncidentes() {
         
         const marker = L.marker([inc.latitud, inc.longitud], { icon: icono })
             .addTo(mapa)
-            .bindPopup(`
-                <div style="min-width: 220px;">
-                    <h3 style="margin: 0 0 8px 0; color: #1e3a8a;">🚨 ${inc.tipo.toUpperCase()}</h3>
-                    <p><strong>Estado:</strong> ${getEstadoTexto(inc.estado)}</p>
-                    <p><strong>Prioridad:</strong> ${inc.prioridad === 1 ? '🔴 Alta' : inc.prioridad === 2 ? '🟠 Media' : '🟢 Baja'}</p>
-                    <p>${inc.descripcion || 'Sin descripción'}</p>
-                    <p><small>${formatFecha(inc.fecha_reporte)}</small></p>
-                    ${inc.es_nuevo === 'nuevo' ? '<p style="color:#dc2626;font-weight:bold;">‼️ NUEVO</p>' : ''}
-                    <div style="margin-top:8px;">
-                        <button onclick="cambiarEstado(${inc.id},'en_proceso')" style="background:#f59e0b;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;margin:2px;">🔄 En proceso</button>
-                        <button onclick="cambiarEstado(${inc.id},'resuelto')" style="background:#10b981;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;margin:2px;">✅ Resuelto</button>
-                    </div>
-                </div>
-            `);
+            .bindPopup(`<b>🚨 ${inc.tipo.toUpperCase()}</b><br>${inc.descripcion || 'Sin descripción'}`);
         
         marcadores.push(marker);
     });
@@ -310,20 +257,14 @@ function actualizarListaAlbergues() {
     if (!listaAlbergues) return;
     
     if (alberguesData.length === 0) {
-        listaAlbergues.innerHTML = '<div class="loading-spinner">No hay albergues registrados</div>';
+        listaAlbergues.innerHTML = '<div class="loading-spinner">No hay albergues</div>';
         return;
     }
     
     listaAlbergues.innerHTML = alberguesData.map(a => `
         <div class="albergue-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <strong>🏠 ${a.nombre}</strong>
-                <span style="font-size:0.75rem;color:${a.capacidad_total > 0 && (a.ocupacion_actual/a.capacidad_total) > 0.8 ? '#dc2626' : '#10b981'};">
-                    ${a.ocupacion_actual}/${a.capacidad_total}
-                </span>
-            </div>
-            <div style="font-size:0.8rem;color:#475569;">📍 ${a.direccion || 'Sin dirección'}</div>
-            <div style="font-size:0.75rem;color:#94a3b8;">👤 ${a.encargado_nombre || 'Sin encargado'} | 📞 ${a.encargado_telefono || 'N/A'}</div>
+            <strong>🏠 ${a.nombre}</strong>
+            <div>Capacidad: ${a.ocupacion_actual}/${a.capacidad_total}</div>
         </div>
     `).join('');
 }
@@ -337,15 +278,7 @@ function actualizarMapaAlbergues() {
         const icono = getIconoAlbergue(a.ocupacion_actual, a.capacidad_total);
         const marker = L.marker([a.latitud, a.longitud], { icon: icono })
             .addTo(mapa)
-            .bindPopup(`
-                <div style="min-width:200px;">
-                    <h3 style="margin:0 0 8px 0;color:#1e3a8a;">🏠 ${a.nombre}</h3>
-                    <p><strong>Capacidad:</strong> ${a.ocupacion_actual}/${a.capacidad_total}</p>
-                    <p><strong>Encargado:</strong> ${a.encargado_nombre || 'No registrado'}</p>
-                    <p><strong>Teléfono:</strong> ${a.encargado_telefono || 'N/A'}</p>
-                    <p><strong>Servicios:</strong> ${a.servicios?.join(', ') || 'No especificados'}</p>
-                </div>
-            `);
+            .bindPopup(`🏠 ${a.nombre}<br>Capacidad: ${a.ocupacion_actual}/${a.capacidad_total}`);
         marcadoresAlbergues.push(marker);
     });
 }
@@ -363,33 +296,11 @@ async function cargarRiesgos() {
         riesgosData = await res.json();
         
         if (statsRiesgos) statsRiesgos.textContent = riesgosData.length;
-        actualizarListaRiesgos();
         actualizarMapaRiesgos();
         
     } catch (error) {
         console.error('Error cargando riesgos:', error);
     }
-}
-
-function actualizarListaRiesgos() {
-    if (!listaRiesgos) return;
-    
-    if (riesgosData.length === 0) {
-        listaRiesgos.innerHTML = '<div class="loading-spinner">No hay zonas de riesgo</div>';
-        return;
-    }
-    
-    listaRiesgos.innerHTML = riesgosData.map(r => `
-        <div class="riesgo-card">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <strong>⚠️ ${r.nombre}</strong>
-                <span style="font-size:0.7rem;padding:2px 10px;border-radius:12px;background:${r.nivel === 'critico' ? '#dc2626' : r.nivel === 'alto' ? '#f59e0b' : '#10b981'};color:white;">
-                    ${r.nivel?.toUpperCase() || 'MEDIO'}
-                </span>
-            </div>
-            <div style="font-size:0.8rem;color:#475569;">${r.tipo || 'Sin tipo'} | ${r.descripcion || ''}</div>
-        </div>
-    `).join('');
 }
 
 function actualizarMapaRiesgos() {
@@ -402,19 +313,13 @@ function actualizarMapaRiesgos() {
             const geo = JSON.parse(r.coordenadas_poligono);
             const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
             
-            let color = '#f59e0b';
-            if (r.nivel === 'critico') color = '#dc2626';
-            else if (r.nivel === 'alto') color = '#f59e0b';
-            else if (r.nivel === 'medio') color = '#3b82f6';
-            else color = '#10b981';
-            
             const polygon = L.polygon(coords, {
-                color: color,
+                color: '#f59e0b',
                 weight: 3,
-                fillColor: color,
+                fillColor: '#f59e0b',
                 fillOpacity: 0.3
             }).addTo(mapa)
-              .bindPopup(`<b>⚠️ ${r.nombre}</b><br>${r.tipo || 'Riesgo'}<br>Nivel: ${r.nivel || 'No especificado'}`);
+              .bindPopup(`⚠️ ${r.nombre}`);
             
             poligonosRiesgo.push(polygon);
         } catch(e) {
@@ -424,129 +329,49 @@ function actualizarMapaRiesgos() {
 }
 
 // =====================================================
-// CENTRAR EN INCIDENTE
+// INICIALIZAR DASHBOARD
 // =====================================================
-function centrarEnIncidente(lat, lng) {
-    if (mapa) mapa.setView([lat, lng], 16);
-}
-
-// =====================================================
-// CAMBIAR ESTADO
-// =====================================================
-async function cambiarEstado(id, nuevoEstado) {
-    if (!userData?.municipio?.slug) return;
-    
+async function initDashboard() {
     try {
-        const res = await fetch(`/api/incidentes/${id}/estado`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'X-Municipio-Slug': userData.municipio.slug
-            },
-            body: JSON.stringify({ estado: nuevoEstado })
-        });
+        console.log('🚀 Iniciando Dashboard...');
         
-        if (res.ok) {
-            mostrarToast('✅ Estado actualizado', 'success');
-            await cargarIncidentes();
+        // Verificar sesión
+        if (typeof verificarSesion === 'function') {
+            if (!verificarSesion()) {
+                window.location.href = '/login.html';
+                return;
+            }
+        } else {
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            if (!token || !user) {
+                window.location.href = '/login.html';
+                return;
+            }
         }
-    } catch (error) {
-        mostrarToast('❌ Error al actualizar', 'error');
-    }
-}
-
-// =====================================================
-// CONTROL DE MAPA
-// =====================================================
-function centrarUbicacion() {
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(pos => {
-            mapa.setView([pos.coords.latitude, pos.coords.longitude], 16);
-            const icono = crearIconoEmoji('📍', '#2196F3', 32, true);
-            L.marker([pos.coords.latitude, pos.coords.longitude], { icon: icono })
-                .bindPopup('📍 Tu ubicación')
-                .addTo(mapa);
-        });
-    }
-}
-
-function zoomIn() { mapa?.zoomIn(); }
-function zoomOut() { mapa?.zoomOut(); }
-function resetMapa() { mapa?.setView(CENTRO, 13); }
-
-function activarDibujoPoligono() {
-    if (drawingControl) {
-        drawingControl.setDrawingMode('polygon');
-        mostrarToast('✏️ Dibuja un polígono en el mapa', 'info');
-    }
-}
-
-function seleccionarUbicacionMapa() {
-    mostrarToast('📍 Haz clic en el mapa para seleccionar ubicación', 'info');
-    mapa.once('click', function(e) {
-        const { lat, lng } = e.latlng;
-        selectedUbicacion = { lat, lng };
-        document.getElementById('reporte-ubicacion').value = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
-        mostrarToast('✅ Ubicación seleccionada', 'success');
-    });
-}
-
-// =====================================================
-// TABS
-// =====================================================
-document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        this.classList.add('active');
-        document.getElementById(`tab-${this.dataset.tab}`).classList.add('active');
-    });
-});
-
-// =====================================================
-// FORMULARIO DE REPORTE
-// =====================================================
-document.getElementById('form-reporte')?.addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const tipo = document.getElementById('reporte-tipo').value;
-    const descripcion = document.getElementById('reporte-descripcion').value;
-    const ubicacion = document.getElementById('reporte-ubicacion').value;
-    
-    if (!tipo || !descripcion || !selectedUbicacion) {
-        mostrarToast('⚠️ Completa todos los campos y selecciona ubicación', 'warning');
-        return;
-    }
-    
-    try {
-        const res = await fetch('/api/incidentes', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}`,
-                'X-Municipio-Slug': userData?.municipio?.slug || 'las-choapas'
-            },
-            body: JSON.stringify({
-                latitud: selectedUbicacion.lat,
-                longitud: selectedUbicacion.lng,
-                tipo,
-                descripcion,
-                ciudadano_nombre: document.getElementById('reporte-nombre').value || 'Anónimo'
-            })
-        });
         
-        if (res.ok) {
-            mostrarToast('✅ Reporte enviado', 'success');
-            this.reset();
-            selectedUbicacion = null;
-            document.getElementById('reporte-ubicacion').value = '';
-            await cargarIncidentes();
+        const user = obtenerUsuario();
+        if (!user) {
+            window.location.href = '/login.html';
+            return;
         }
+        
+        initMapaDashboard();
+        await cargarIncidentes();
+        await cargarAlbergues();
+        await cargarRiesgos();
+        
+        console.log('✅ Dashboard iniciado correctamente');
+        
+        setInterval(() => {
+            cargarIncidentes();
+            cargarAlbergues();
+        }, 30000);
+        
     } catch (error) {
-        mostrarToast('❌ Error al enviar', 'error');
+        console.error('❌ Error en initDashboard:', error);
     }
-});
+}
 
 // =====================================================
 // LOGOUT
@@ -558,84 +383,10 @@ function logout() {
 }
 
 // =====================================================
-// INICIALIZAR DASHBOARD
+// INICIALIZAR
 // =====================================================
-async function initDashboard() {
-    try {
-        console.log('🚀 Iniciando Dashboard...');
-        
-        // Verificar sesión SOLO si la función existe
-        if (typeof verificarSesion === 'function') {
-            if (!verificarSesion()) {
-                console.log('⛔ Sesión no válida, redirigiendo...');
-                window.location.href = '/login.html';
-                return;
-            }
-        } else {
-            console.warn('⚠️ verificarSesion no definida. Verificando token manualmente...');
-            // Verificación manual
-            const token = localStorage.getItem('token');
-            const user = localStorage.getItem('user');
-            if (!token || !user) {
-                window.location.href = '/login.html';
-                return;
-            }
-        }
-        
-        // Obtener usuario
-        const user = obtenerUsuario();
-        console.log('👤 Usuario:', user);
-        
-        if (!user) {
-            console.log('⚠️ No hay usuario, redirigiendo al login...');
-            window.location.href = '/login.html';
-            return;
-        }
-        
-        // Inicializar mapa (Leaflet)
-        console.log('🗺️ Inicializando mapa...');
-        initMapaDashboard();
-        
-        // Cargar datos
-        console.log('📡 Cargando datos...');
-        await cargarIncidentes();
-        await cargarAlbergues();
-        await cargarRiesgos();
-        
-        console.log('✅ Dashboard iniciado correctamente');
-        
-        // Recargar cada 30 segundos
-        setInterval(() => {
-            cargarIncidentes();
-            cargarAlbergues();
-            cargarRiesgos();
-        }, 30000);
-        
-    } catch (error) {
-        console.error('❌ Error en initDashboard:', error);
-        const mapaDiv = document.getElementById('mapa-dashboard');
-        if (mapaDiv) {
-            mapaDiv.innerHTML = `
-                <div style="padding: 40px; text-align: center; color: #dc2626;">
-                    <h3>❌ Error al cargar el dashboard</h3>
-                    <p>${error.message}</p>
-                    <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 8px; cursor: pointer;">Recargar</button>
-                </div>
-            `;
-        }
-    }
-}
-
 document.addEventListener('DOMContentLoaded', initDashboard);
 
-// Funciones globales
+// Exportar globales
 window.logout = logout;
-window.centrarEnIncidente = centrarEnIncidente;
-window.cambiarEstado = cambiarEstado;
-window.centrarUbicacion = centrarUbicacion;
-window.zoomIn = zoomIn;
-window.zoomOut = zoomOut;
-window.resetMapa = resetMapa;
-window.activarDibujoPoligono = activarDibujoPoligono;
-window.seleccionarUbicacionMapa = seleccionarUbicacionMapa;
-window.filtrarIncidentes = filtrarIncidentes;
+window.initMapaDashboard = initMapaDashboard;
