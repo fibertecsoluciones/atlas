@@ -1,0 +1,37 @@
+[33m29a6409[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m  "FIX: Eliminadas declaraciones duplicadas (dibujando y drawingControl)"
+[33m659a9a5[m "FIX: Eliminada declaración duplicada de drawingControl"
+[33m046ae57[m "FIX: Dashboard limpio sin duplicados"
+[33m6a249cf[m Dibujar"
+[33m1f637ed[m "FEAT: Dashboard completo con módulo de zonas de riesgo"
+[33m576356e[m "FEAT: Dashboard dark mode estilo CENAPRED"
+[33m839c11c[m "FIX: Dashboard con panel lateral completo y scripts faltantes"
+[33m1dd368a[m FIX: Eliminadas declaraciones duplicadas de DEFAULT_CENTER y CENTROS_MUNICIPIOS
+[33me19e5e5[m "FIX: Agregada función initMapaDashboard y código completo"
+[33m234414c[m "FIX: verificarSesion con validación de existencia"
+[33mbfe5494[m "FIX: auth.js frontend sin require (código para navegador)"
+[33m71c8eb7[m "LOGIN: Versión sin bcrypt para pruebas (comparación directa)"
+[33m295908f[m "FEAT: Gestión de Municipios y Usuarios (frontend + backend)"
+[33m6a42556[m "Agregados módulos de Municipios y Usuarios al servidor"
+[33m9b4f35a[m "LOGIN: Versión sin bcrypt para pruebas"
+[33mdcd57b5[m  "FIX: auth.js frontend sin require (código plano)"
+[33m2b1ead0[m "TEST: Login sin bcrypt para verificar"
+[33m5d44ac2[m "Cambiado bcrypt por bcryptjs para compatibilidad"
+[33m544048d[m "FIX: Login con pruebas de bcrypt"
+[33m8937bc6[m "FIX: Corregido authMiddleware y removida dependencia problemática"
+[33m77a8733[m FIX: Corregida sintaxis de router.put en incidentes.j
+[33mc4401dd[m "FIX: Corregida ruta PUT en incidentes.js"
+[33m0462eb3[m "FIX: Login con bcrypt.compare mejorado"
+[33mebc8ad5[m Agregada ruta /api/db-test para verificar conexión a BD"
+[33m90770e1[m FIX: Login con logs detallados para debug
+[33m3696446[m FIX: Login corregido - consulta simplificada
+[33m258b825[m Separación completa: HTML, CSS y JS en archivos independientes
+[33m26a0e9f[m ACTUALIZACION MAPA
+[33m827da3a[m Dashboard migrado a Google Maps
+[33mc8dbe09[m DATABASE_URL configurada
+[33m6a45644[m cargar municipio
+[33ma804a68[m cargar municipios
+[33m697a774[m Agregado package.json en raíz para Railway
+[33mc7e6e4e[m Fix: Agregado package.json en raíz para Railway
+[33md356029[m "Sistema completo - HTML, CSS y JS separados"
+[33m040bc55[m raylay
+[33m29d18e6[m Primera versión - Estructura inicial del sistema
