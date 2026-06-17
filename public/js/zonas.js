@@ -41,17 +41,19 @@ function renderizarListaRiesgos() {
             </div>`;
         return;
     }
-    listaRiesgos.innerHTML = riesgosData.map(r => `
+    listaRiesgos.innerHTML = riesgosData.map(r => {
+        const nivelColor = window.getNivelColor ? window.getNivelColor(r.nivel) : '#f59e0b';
+        return `
         <div class="riesgo-card">
             <div style="display:flex;justify-content:space-between;align-items:center;">
                 <strong>⚠️ ${r.nombre}</strong>
-                <span style="font-size:0.7rem;padding:2px 10px;border-radius:12px;background:${getNivelColor(r.nivel)};color:white;">
+                <span style="font-size:0.7rem;padding:2px 10px;border-radius:12px;background:${nivelColor};color:white;">
                     ${r.nivel?.toUpperCase() || 'MEDIO'}
                 </span>
             </div>
             <div style="font-size:0.8rem;color:#8a9bb5;">${r.tipo || 'Sin tipo'}</div>
         </div>
-    `).join('');
+    `}).join('');
 }
 
 function renderizarMapaRiesgos() {

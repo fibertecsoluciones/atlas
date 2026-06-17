@@ -59,7 +59,8 @@ function renderizarMapaAlbergues() {
         if (pct > 80) color = '#f97316';
         if (pct >= 100) color = '#dc2626';
         
-        const icono = crearIconoEmoji('🏠', color, 38, true);
+        // Usar la función global de dashboard.js
+        const icono = window.crearIconoEmoji ? window.crearIconoEmoji('🏠', color, 38, true) : L.divIcon({ html: '🏠' });
         const marker = L.marker([a.latitud, a.longitud], { icon: icono })
             .addTo(mapa)
             .bindPopup(`<b>🏠 ${a.nombre}</b><br>Capacidad: ${a.ocupacion_actual}/${a.capacidad_total}<br>📍 ${a.direccion || ''}`);

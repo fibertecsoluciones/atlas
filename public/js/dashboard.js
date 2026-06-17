@@ -5,6 +5,7 @@
 let mapa = null;
 let userData = null;
 let drawingControl = null;
+let featureGroup = null;
 
 // =====================================================
 // REFERENCIAS DOM
@@ -26,6 +27,45 @@ const modalOverlay = document.getElementById('modal-overlay');
 const modalTitulo = document.getElementById('modal-titulo');
 const modalBody = document.getElementById('modal-body');
 const toastContainer = document.getElementById('toast-container');
+
+// =====================================================
+// FUNCIONES DE ICONOS (EXPORTADAS PARA OTROS MÓDULOS)
+// =====================================================
+function crearIconoEmoji(emoji, color, tamaño = 36, fondo = true) {
+    const fondoStyle = fondo ? `
+        background: rgba(0,0,0,0.6);
+        border-radius: 50%;
+        padding: 6px;
+        border: 2px solid ${color};
+        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    ` : '';
+    
+    return L.divIcon({
+        html: `<div style="
+            width: ${tamaño}px;
+            height: ${tamaño}px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: ${tamaño - 10}px;
+            ${fondoStyle}
+            cursor: pointer;
+        ">${emoji}</div>`,
+        iconSize: [tamaño, tamaño],
+        popupAnchor: [0, -tamaño/2],
+        className: 'emoji-marcador'
+    });
+}
+
+function getNivelColor(nivel) {
+    const colores = {
+        'critico': '#dc2626',
+        'alto': '#f97316',
+        'medio': '#f59e0b',
+        'bajo': '#10b981'
+    };
+    return colores[nivel] || '#6b7f9f';
+}
 
 // =====================================================
 // UTILIDADES
@@ -73,6 +113,11 @@ function initMapaDashboard() {
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         }).addTo(mapa);
         
+        // === CORRECCIÓN: Crear FeatureGroup para leaflet.draw ===
+        if (!featureGroup) {
+            featureGroup = L.featureGroup().addTo(mapa);
+        }
+        
         if (!drawingControl) {
             drawingControl = new L.Control.Draw({
                 draw: {
@@ -82,7 +127,9 @@ function initMapaDashboard() {
                     polyline: false,
                     marker: false
                 },
-                edit: { featureGroup: null }
+                edit: {
+                    featureGroup: featureGroup  // ← CORREGIDO
+                }
             });
             mapa.addControl(drawingControl);
         }
@@ -248,5 +295,7 @@ window.abrirFormularioAlbergue = abrirFormularioAlbergue;
 window.seleccionarUbicacionMapa = seleccionarUbicacionMapa;
 window.cerrarModal = cerrarModal;
 window.mostrarToast = mostrarToast;
+window.crearIconoEmoji = crearIconoEmoji;
+window.getNivelColor = getNivelColor;
 
 document.addEventListener('DOMContentLoaded', initDashboard);

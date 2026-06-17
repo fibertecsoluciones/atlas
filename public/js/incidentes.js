@@ -10,9 +10,9 @@ const fotoInput = document.getElementById('foto');
 const nombreInput = document.getElementById('nombre');
 const telefonoInput = document.getElementById('telefono');
 const btnEnviar = document.getElementById('btn-enviar');
-const loadingIncidenteDiv = document.getElementById('loading'); // ← RENOMBRADO
-const successDiv = document.getElementById('success');
-const errorDiv = document.getElementById('error');
+const loadingIncidenteDiv = document.getElementById('loading');
+const successIncidenteDiv = document.getElementById('success');  // ← RENOMBRADO
+const errorIncidenteDiv = document.getElementById('error');      // ← RENOMBRADO
 
 // Estado
 let tipoActual = null;
@@ -83,9 +83,9 @@ async function enviarReporte() {
     
     // Deshabilitar botón y mostrar loading
     btnEnviar.disabled = true;
-    loadingIncidenteDiv.style.display = 'block'; // ← RENOMBRADO
-    successDiv.style.display = 'none';
-    errorDiv.style.display = 'none';
+    loadingIncidenteDiv.style.display = 'block';
+    successIncidenteDiv.style.display = 'none';
+    errorIncidenteDiv.style.display = 'none';
     
     const datos = {
         latitud: ubicacion.lat,
@@ -100,7 +100,7 @@ async function enviarReporte() {
         const result = await api.reportarIncidente(datos, municipioSlug);
         
         if (result.success || result.id) {
-            successDiv.style.display = 'block';
+            successIncidenteDiv.style.display = 'block';
             
             // Limpiar formulario
             descripcionInput.value = '';
@@ -121,21 +121,21 @@ async function enviarReporte() {
             btnEnviar.innerHTML = '📍 Selecciona una ubicación en el mapa';
             
             setTimeout(() => {
-                successDiv.style.display = 'none';
+                successIncidenteDiv.style.display = 'none';
             }, 5000);
         } else {
-            errorDiv.style.display = 'block';
+            errorIncidenteDiv.style.display = 'block';
             setTimeout(() => {
-                errorDiv.style.display = 'none';
+                errorIncidenteDiv.style.display = 'none';
             }, 5000);
         }
     } catch (error) {
-        errorDiv.style.display = 'block';
+        errorIncidenteDiv.style.display = 'block';
         setTimeout(() => {
-            errorDiv.style.display = 'none';
+            errorIncidenteDiv.style.display = 'none';
         }, 5000);
     } finally {
-        loadingIncidenteDiv.style.display = 'none'; // ← RENOMBRADO
+        loadingIncidenteDiv.style.display = 'none';
         btnEnviar.disabled = false;
     }
 }
