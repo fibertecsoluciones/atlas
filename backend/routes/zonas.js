@@ -169,7 +169,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
             descripcion, 
             poblacion_afectada,
             viviendas_afectadas,
-            coordenadas_poligono  // ← AHORA SE RECIBE
+            coordenadas_poligono  // ← ESTE CAMPO ES EL QUE FALTABA
         } = req.body;
         
         console.log('📝 Actualizando zona ID:', id);
@@ -211,7 +211,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
                 descripcion = $4,
                 poblacion_afectada = $5,
                 viviendas_afectadas = $6,
-                coordenadas_poligono = $7,  ← ← ← AHORA SE ACTUALIZA
+                coordenadas_poligono = COALESCE($7, coordenadas_poligono),  ← ← ← SE ACTUALIZA EL POLÍGONO
                 fecha_actualizacion = NOW()
             WHERE id = $8 AND municipio_id = $9
             RETURNING id, nombre, tipo, nivel, poblacion_afectada, viviendas_afectadas
@@ -222,7 +222,7 @@ router.put('/:id', authMiddleware, async (req, res) => {
             descripcion, 
             poblacion, 
             viviendas, 
-            coordenadas_poligono,  // ← ENVIAMOS EL NUEVO POLÍGONO
+            coordenadas_poligono,  // ← EL NUEVO POLÍGONO
             id, 
             req.municipioId
         ]);
