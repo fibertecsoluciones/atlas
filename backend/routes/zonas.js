@@ -10,6 +10,8 @@ router.use(tenantMiddleware);
 // GET: Zonas de riesgo del municipio
 // =====================================================
 router.get('/', async (req, res) => {
+    console.log('📥 [API] GET /zonas - Municipio:', req.municipioId);
+    
     try {
         const result = await pool.query(`
             SELECT 
@@ -33,10 +35,11 @@ router.get('/', async (req, res) => {
                 END
         `, [req.municipioId]);
         
+        console.log(`📥 [API] GET /zonas - ${result.rows.length} zonas encontradas`);
         res.json(result.rows);
     } catch (error) {
-        console.error('❌ Error GET /zonas:', error);
-        res.status(500).json({ error: 'Error al obtener zonas de riesgo' });
+        console.error('❌ [API] Error GET /zonas:', error);
+        res.status(500).json({ error: 'Error al obtener zonas' });
     }
 });
 
@@ -44,6 +47,8 @@ router.get('/', async (req, res) => {
 // GET: Obtener una zona por ID
 // =====================================================
 router.get('/:id', async (req, res) => {
+    console.log(`📥 [API] GET /zonas/${req.params.id}`);
+    
     try {
         const { id } = req.params;
         const result = await pool.query(`
@@ -52,12 +57,14 @@ router.get('/:id', async (req, res) => {
         `, [id, req.municipioId]);
         
         if (result.rows.length === 0) {
+            console.log(`⚠️ [API] GET /zonas/${id} - No encontrada`);
             return res.status(404).json({ error: 'Zona no encontrada' });
         }
         
+        console.log(`✅ [API] GET /zonas/${id} - Encontrada`);
         res.json(result.rows[0]);
     } catch (error) {
-        console.error('❌ Error GET /zonas/:id:', error);
+        console.error(`❌ [API] Error GET /zonas/${req.params.id}:`, error);
         res.status(500).json({ error: 'Error al obtener zona' });
     }
 });
@@ -66,6 +73,9 @@ router.get('/:id', async (req, res) => {
 // POST: Crear zona de riesgo
 // =====================================================
 router.post('/', authMiddleware, async (req, res) => {
+    console.log('📥 [API] POST /zonas');
+    console.log('📦 Body:', req.body);
+    
     try {
         const { 
             nombre, 
@@ -78,6 +88,7 @@ router.post('/', authMiddleware, async (req, res) => {
         } = req.body;
         
         if (!nombre || !coordenadas_poligono) {
+            console.log('❌ [API] POST /zonas - Faltan datos requeridos');
             return res.status(400).json({ error: 'Nombre y coordenadas son requeridos' });
         }
         
@@ -99,17 +110,20 @@ router.post('/', authMiddleware, async (req, res) => {
             req.user.id
         ]);
         
+        console.log(`✅ [API] POST /zonas - Creada ID: ${result.rows[0].id}`);
         res.json({ success: true, id: result.rows[0].id });
     } catch (error) {
-        console.error('❌ Error POST /zonas:', error);
+        console.error('❌ [API] Error POST /zonas:', error);
         res.status(500).json({ error: 'Error al crear zona' });
     }
 });
 
 // =====================================================
-// PUT: Actualizar zona de riesgo (INCLUYE POLÍGONO)
+// PUT: Actualizar zona de riesgo - CON LOGS DETALLADOS
 // =====================================================
 router.put('/:id', authMiddleware, async (req, res) => {
+    console.log(`📥 [API] PUT /zonas/${req.params.id}`);
+    
     try {
         const { id } = req.params;
         const { 
@@ -122,8 +136,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
             viviendas_afectadas
         } = req.body;
         
-        console.log('📝 PUT /zonas/' + id);
-        console.log('📦 Body:', req.body);
+        console.log('📦 [API] Body recibido:', req.body);
+        console.log('📦 [API] coordenadas_poligono:', coordenadas_poligono);
         
         // Verificar que la zona existe
         const check = await pool.query(
@@ -132,8 +146,11 @@ router.put('/:id', authMiddleware, async (req, res) => {
         );
         
         if (check.rows.length === 0) {
+            console.log(`❌ [API] PUT /zonas/${id} - No encontrada`);
             return res.status(404).json({ error: 'Zona no encontrada' });
         }
+        
+        console.log(`✅ [API] PUT /zonas/${id} - Zona encontrada, actualizando...`);
         
         // ACTUALIZAR TODO INCLUYENDO EL POLÍGONO
         const result = await pool.query(`
@@ -154,18 +171,20 @@ router.put('/:id', authMiddleware, async (req, res) => {
             tipo || 'otro',
             nivel || 'medio',
             descripcion || '',
-            coordenadas_poligono,  // ← EL POLÍGONO SE ACTUALIZA AQUÍ
+            coordenadas_poligono,
             parseInt(poblacion_afectada) || 0,
             parseInt(viviendas_afectadas) || 0,
             id,
             req.municipioId
         ]);
         
-        console.log('✅ Zona actualizada ID:', id);
+        console.log(`✅ [API] PUT /zonas/${id} - Actualizada correctamente`);
+        console.log('📦 [API] Nuevo coordenadas_poligono:', coordenadas_poligono);
+        
         res.json({ success: true, mensaje: 'Zona actualizada' });
         
     } catch (error) {
-        console.error('❌ Error PUT /zonas:', error);
+        console.error(`❌ [API] Error PUT /zonas/${req.params.id}:`, error);
         res.status(500).json({ error: 'Error al actualizar zona' });
     }
 });
@@ -174,6 +193,8 @@ router.put('/:id', authMiddleware, async (req, res) => {
 // DELETE: Eliminar zona de riesgo
 // =====================================================
 router.delete('/:id', authMiddleware, async (req, res) => {
+    console.log(`📥 [API] DELETE /zonas/${req.params.id}`);
+    
     try {
         const { id } = req.params;
         
@@ -183,12 +204,14 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         );
         
         if (result.rows.length === 0) {
+            console.log(`❌ [API] DELETE /zonas/${id} - No encontrada`);
             return res.status(404).json({ error: 'Zona no encontrada' });
         }
         
+        console.log(`✅ [API] DELETE /zonas/${id} - Eliminada`);
         res.json({ success: true });
     } catch (error) {
-        console.error('❌ Error DELETE /zonas:', error);
+        console.error(`❌ [API] Error DELETE /zonas/${req.params.id}:`, error);
         res.status(500).json({ error: 'Error al eliminar zona' });
     }
 });
