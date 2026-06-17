@@ -48,7 +48,7 @@ async function cargarRiesgos() {
 }
 
 // =====================================================
-// RENDERIZAR LISTA DE ZONAS CON BOTONES
+// RENDERIZAR LISTA DE ZONAS
 // =====================================================
 function renderizarListaRiesgos() {
     if (!listaRiesgos) return;
@@ -137,7 +137,7 @@ function renderizarMapaRiesgos() {
 }
 
 // =====================================================
-// EDITAR ZONA (SOLO POLÍGONO, SIN MODAL)
+// EDITAR ZONA
 // =====================================================
 async function editarZona(id) {
     try {
@@ -156,10 +156,8 @@ async function editarZona(id) {
         zonaEditandoId = id;
         zonaEditandoData = zona;
         
-        // Limpiar edición anterior
         limpiarEdicion();
         
-        // Dibujar polígono existente
         const geo = JSON.parse(zona.coordenadas_poligono);
         const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
         
@@ -171,16 +169,11 @@ async function editarZona(id) {
             fillOpacity: 0.2
         }).addTo(mapa);
         
-        // Centrar mapa
         mapa.fitBounds(polygonEditando.getBounds(), { padding: [50, 50] });
-        
-        // Activar edición manual (puntos arrastrables)
         polygonEditando.editing.enable();
         
-        // Mostrar botón guardar
         mostrarBotonGuardarEdicion();
-        
-        mostrarToast('🔄 Arrastra los puntos azules para modificar el polígono. Luego haz clic en "💾 Guardar"', 'info');
+        mostrarToast('🔄 Arrastra los puntos azules para modificar el polígono', 'info');
         
     } catch (error) {
         console.error('❌ Error al cargar zona para editar:', error);
@@ -189,13 +182,11 @@ async function editarZona(id) {
 }
 
 // =====================================================
-// MOSTRAR BOTÓN GUARDAR EN EL MAPA
+// BOTÓN GUARDAR
 // =====================================================
 function mostrarBotonGuardarEdicion() {
     const btnAnterior = document.getElementById('btn-guardar-edicion');
-    if (btnAnterior) {
-        btnAnterior.remove();
-    }
+    if (btnAnterior) btnAnterior.remove();
     
     const btnGuardar = document.createElement('button');
     btnGuardar.id = 'btn-guardar-edicion';
@@ -217,20 +208,18 @@ function mostrarBotonGuardarEdicion() {
         transition: all 0.3s;
     `;
     btnGuardar.onclick = function() {
-        guardarPoligonoDirecto();
+        guardarPoligonoEditado();
     };
     
     const mapContainer = document.querySelector('.map-container');
-    if (mapContainer) {
-        mapContainer.appendChild(btnGuardar);
-    }
+    if (mapContainer) mapContainer.appendChild(btnGuardar);
 }
 
 // =====================================================
-// GUARDAR POLÍGONO EDITADO - VERSIÓN CORREGIDA
+// GUARDAR POLÍGONO EDITADO
 // =====================================================
-function guardarPoligonoDirecto() {
-    console.log('💾 Intentando guardar polígono editado...');
+function guardarPoligonoEditado() {
+    console.log('💾 Guardando polígono editado...');
     
     if (!polygonEditando) {
         mostrarToast('⚠️ No hay polígono para guardar', 'warning');
@@ -242,11 +231,8 @@ function guardarPoligonoDirecto() {
         return;
     }
     
-    // =============================================
-    // OBTENER PUNTOS ACTUALES DIRECTAMENTE DEL MAPA
-    // =============================================
     try {
-        // Obtener los puntos actuales del polígono (ya editados)
+        // Obtener puntos actuales del polígono
         const latlngs = polygonEditando.getLatLngs()[0];
         
         if (!latlngs || latlngs.length < 3) {
@@ -254,39 +240,48 @@ function guardarPoligonoDirecto() {
             return;
         }
         
-        console.log('📍 Puntos actuales del polígono:', latlngs);
+        console.log('📍 Puntos actuales:', latlngs);
         
         // Convertir a [lng, lat]
         const coordenadas = latlngs.map(c => [c.lng, c.lat]);
-        coordenadas.push(coordenadas[0]); // Cerrar polígono
+        coordenadas.push(coordenadas[0]);
         
         const geojson = {
             type: 'Polygon',
             coordinates: [coordenadas]
         };
         
-        console.log('📦 GeoJSON a guardar:', JSON.stringify(geojson));
+        console.log('📦 GeoJSON:', JSON.stringify(geojson));
         
-        // Mostrar confirmación
-        if (!confirm(`¿Guardar cambios del polígono de "${zonaEditandoData.nombre}"?`)) {
+        if (!confirm(`¿Guardar cambios de "${zonaEditandoData.nombre}"?`)) {
             return;
         }
         
-        // Llamar a la función de guardado
-        guardarZonaEditada(zonaEditandoId, geojson, zonaEditandoData);
+        // Enviar al backend
+        enviarActualizacion(zonaEditandoId, geojson);
         
     } catch (error) {
         console.error('❌ Error al obtener coordenadas:', error);
-        mostrarToast('❌ Error al leer el polígono editado', 'error');
+        mostrarToast('❌ Error al leer el polígono', 'error');
     }
 }
 
 // =====================================================
-// GUARDAR ZONA EDITADA (EN EL BACKEND)
+// ENVIAR ACTUALIZACIÓN AL BACKEND
 // =====================================================
-async function guardarZonaEditada(id, geojson, datos) {
+async function enviarActualizacion(id, geojson) {
     try {
-        console.log('📤 Enviando al backend:', { id, geojson, datos });
+        const payload = {
+            nombre: zonaEditandoData.nombre,
+            tipo: zonaEditandoData.tipo,
+            nivel: zonaEditandoData.nivel,
+            descripcion: zonaEditandoData.descripcion || '',
+            poblacion_afectada: zonaEditandoData.poblacion_afectada || 0,
+            viviendas_afectadas: zonaEditandoData.viviendas_afectadas || 0,
+            coordenadas_poligono: JSON.stringify(geojson)  // ← EL POLÍGONO NUEVO
+        };
+        
+        console.log('📤 Enviando al backend:', payload);
         
         const res = await fetch(`/api/zonas/${id}`, {
             method: 'PUT',
@@ -295,19 +290,11 @@ async function guardarZonaEditada(id, geojson, datos) {
                 'Authorization': `Bearer ${localStorage.getItem('token')}`,
                 'X-Municipio-Slug': window.userData?.municipio?.slug || 'las-choapas'
             },
-            body: JSON.stringify({
-                nombre: datos.nombre,
-                tipo: datos.tipo,
-                nivel: datos.nivel,
-                descripcion: datos.descripcion || '',
-                poblacion_afectada: datos.poblacion_afectada || 0,
-                viviendas_afectadas: datos.viviendas_afectadas || 0,
-                coordenadas_poligono: JSON.stringify(geojson)
-            })
+            body: JSON.stringify(payload)
         });
         
         const data = await res.json();
-        console.log('📥 Respuesta del backend:', data);
+        console.log('📥 Respuesta:', data);
         
         if (res.ok) {
             mostrarToast('✅ Polígono actualizado correctamente', 'success');
@@ -317,7 +304,7 @@ async function guardarZonaEditada(id, geojson, datos) {
             mostrarToast(`❌ ${data.error || 'Error al guardar'}`, 'error');
         }
     } catch (error) {
-        console.error('❌ Error guardando zona editada:', error);
+        console.error('❌ Error:', error);
         mostrarToast('❌ Error de conexión', 'error');
     }
 }
@@ -333,10 +320,8 @@ function limpiarEdicion() {
     zonaEditandoId = null;
     zonaEditandoData = null;
     
-    const btnGuardar = document.getElementById('btn-guardar-edicion');
-    if (btnGuardar) {
-        btnGuardar.remove();
-    }
+    const btn = document.getElementById('btn-guardar-edicion');
+    if (btn) btn.remove();
 }
 
 // =====================================================
@@ -349,12 +334,10 @@ function cancelarEdicionPoligono() {
 }
 
 // =====================================================
-// ELIMINAR ZONA DE RIESGO
+// ELIMINAR ZONA
 // =====================================================
 async function eliminarZona(id) {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta zona de riesgo?')) {
-        return;
-    }
+    if (!confirm('¿Eliminar esta zona de riesgo?')) return;
     
     try {
         const res = await fetch(`/api/zonas/${id}`, {
@@ -365,22 +348,20 @@ async function eliminarZona(id) {
             }
         });
         
-        const data = await res.json();
-        
         if (res.ok) {
-            mostrarToast('✅ Zona eliminada correctamente', 'success');
+            mostrarToast('✅ Zona eliminada', 'success');
             await cargarRiesgos();
         } else {
+            const data = await res.json();
             mostrarToast(`❌ ${data.error || 'Error al eliminar'}`, 'error');
         }
     } catch (error) {
-        console.error('❌ Error eliminando zona:', error);
         mostrarToast('❌ Error de conexión', 'error');
     }
 }
 
 // =====================================================
-// EXPORTAR FUNCIONES GLOBALES
+// EXPORTAR GLOBALES
 // =====================================================
 window.cargarRiesgos = cargarRiesgos;
 window.editarZona = editarZona;
