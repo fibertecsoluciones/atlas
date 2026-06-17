@@ -1,5 +1,5 @@
 /* =============================================
-   DASHBOARD - ESTILOS COMPLETOS
+   DASHBOARD - DARK MODE (ESTILO CENAPRED)
    ============================================= */
 
 /* ===== RESET ===== */
@@ -11,7 +11,8 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: #f0f2f5;
+    background: #0a0e17;
+    color: #e8edf5;
     overflow: hidden;
     height: 100vh;
     display: flex;
@@ -22,15 +23,15 @@ body {
    HEADER
    ============================================= */
 .header {
-    background: linear-gradient(135deg, #1e3a8a, #dc2626);
-    color: white;
+    background: linear-gradient(135deg, #0d1524, #1a0f0f);
+    border-bottom: 2px solid #dc2626;
     padding: 10px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
     gap: 10px;
-    height: 60px;
+    height: 64px;
     flex-shrink: 0;
     z-index: 1000;
 }
@@ -38,52 +39,72 @@ body {
 .header-left {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
+}
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-logo .shield {
+    font-size: 1.8rem;
 }
 
 .header h1 {
     font-size: 1.2rem;
     font-weight: 700;
+    color: #e8edf5;
+    letter-spacing: 0.5px;
+}
+
+.header h1 span {
+    color: #dc2626;
 }
 
 .header-subtitle {
-    font-size: 0.8rem;
-    opacity: 0.7;
+    font-size: 0.75rem;
+    color: #6b7f9f;
     font-weight: 300;
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }
 
 .header-right {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 16px;
 }
 
 .municipio-badge {
-    background: rgba(255,255,255,0.15);
+    background: rgba(220, 38, 38, 0.15);
     padding: 4px 14px;
-    border-radius: 12px;
+    border-radius: 20px;
     font-size: 0.75rem;
-    border: 1px solid rgba(255,255,255,0.2);
+    color: #f87171;
+    border: 1px solid rgba(220, 38, 38, 0.2);
 }
 
 .user-name {
-    font-size: 0.9rem;
-    opacity: 0.9;
+    font-size: 0.85rem;
+    color: #c8d2e3;
 }
 
 .btn-logout {
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: white;
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.2);
+    color: #f87171;
     padding: 6px 16px;
-    border-radius: 8px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 0.8rem;
     transition: all 0.3s;
 }
 
 .btn-logout:hover {
-    background: rgba(255,255,255,0.2);
+    background: rgba(220, 38, 38, 0.2);
+    border-color: #dc2626;
 }
 
 /* =============================================
@@ -93,9 +114,9 @@ body {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
     gap: 10px;
-    padding: 10px 20px;
-    background: white;
-    border-bottom: 1px solid #e2e8f0;
+    padding: 12px 20px;
+    background: #111927;
+    border-bottom: 1px solid #1e2d45;
     flex-shrink: 0;
 }
 
@@ -104,18 +125,20 @@ body {
     align-items: center;
     gap: 12px;
     padding: 10px 16px;
-    background: #f8fafc;
+    background: #0d1524;
     border-radius: 10px;
+    border: 1px solid #1a2332;
     transition: all 0.3s;
 }
 
 .stat-card:hover {
-    background: #eef2f6;
+    background: #1a2332;
+    border-color: #dc2626;
     transform: translateY(-2px);
 }
 
 .stat-icon {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
 }
 
 .stat-info {
@@ -126,15 +149,22 @@ body {
 .stat-number {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1e3a8a;
+    color: #e8edf5;
     line-height: 1.2;
 }
 
+.stat-number.activos { color: #dc2626; }
+.stat-number.proceso { color: #f97316; }
+.stat-number.resueltos { color: #10b981; }
+.stat-number.albergues { color: #3b82f6; }
+.stat-number.riesgos { color: #f59e0b; }
+.stat-number.hoy { color: #8b5cf6; }
+
 .stat-label {
-    font-size: 0.7rem;
-    color: #64748b;
+    font-size: 0.65rem;
+    color: #6b7f9f;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.8px;
 }
 
 /* =============================================
@@ -152,7 +182,7 @@ body {
 .map-container {
     flex: 1;
     position: relative;
-    background: #e8ecf1;
+    background: #0a0e17;
 }
 
 #mapa-dashboard {
@@ -160,7 +190,7 @@ body {
     height: 100%;
 }
 
-/* Controles flotantes del mapa */
+/* Controles del mapa */
 .map-controls {
     position: absolute;
     bottom: 20px;
@@ -174,12 +204,12 @@ body {
 .map-btn {
     width: 40px;
     height: 40px;
-    border: none;
+    border: 1px solid #1e2d45;
     border-radius: 8px;
-    background: white;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    background: #111927;
+    color: #c8d2e3;
     cursor: pointer;
-    font-size: 1.1rem;
+    font-size: 1rem;
     transition: all 0.2s;
     display: flex;
     align-items: center;
@@ -187,8 +217,9 @@ body {
 }
 
 .map-btn:hover {
-    transform: scale(1.05);
-    background: #f0f0f0;
+    background: #1a2332;
+    border-color: #dc2626;
+    color: #dc2626;
 }
 
 /* =============================================
@@ -196,8 +227,8 @@ body {
    ============================================= */
 .panel-lateral {
     width: 420px;
-    background: white;
-    border-left: 1px solid #e2e8f0;
+    background: #111927;
+    border-left: 1px solid #1e2d45;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -206,54 +237,47 @@ body {
 /* ===== TABS ===== */
 .panel-tabs {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    border-bottom: 1px solid #e2e8f0;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid #1e2d45;
     flex-shrink: 0;
+    background: #0d1524;
 }
 
 .tab-btn {
-    padding: 12px 10px;
+    padding: 12px 8px;
     border: none;
     background: transparent;
     cursor: pointer;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: #64748b;
+    color: #6b7f9f;
     transition: all 0.3s;
     position: relative;
+    border-bottom: 2px solid transparent;
 }
 
 .tab-btn:hover {
-    background: #f8fafc;
-    color: #1e3a8a;
+    color: #e8edf5;
+    background: rgba(220, 38, 38, 0.05);
 }
 
 .tab-btn.active {
     color: #dc2626;
-}
-
-.tab-btn.active::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 20%;
-    right: 20%;
-    height: 3px;
-    background: #dc2626;
-    border-radius: 3px 3px 0 0;
+    border-bottom-color: #dc2626;
 }
 
 /* ===== PANEL CONTENT ===== */
 .panel-content {
     flex: 1;
     overflow: hidden;
+    background: #111927;
 }
 
 .tab-content {
     display: none;
     height: 100%;
     flex-direction: column;
-    padding: 15px;
+    padding: 16px;
     overflow: hidden;
 }
 
@@ -271,8 +295,8 @@ body {
 }
 
 .tab-header h3 {
-    font-size: 1rem;
-    color: #1e3a8a;
+    font-size: 0.95rem;
+    color: #e8edf5;
 }
 
 .tab-filtros {
@@ -282,10 +306,16 @@ body {
 
 .tab-filtros select {
     padding: 4px 10px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #1e2d45;
     border-radius: 6px;
-    font-size: 0.75rem;
-    background: white;
+    font-size: 0.7rem;
+    background: #0d1524;
+    color: #c8d2e3;
+}
+
+.tab-filtros select:focus {
+    outline: none;
+    border-color: #dc2626;
 }
 
 .btn-agregar {
@@ -301,14 +331,16 @@ body {
 }
 
 .btn-agregar:hover {
-    background: #b91c1c;
+    background: #991b1b;
     transform: scale(1.02);
 }
 
 /* ===== LISTAS SCROLLABLES ===== */
 .lista-incidentes,
 .lista-albergues,
-.lista-riesgos {
+.lista-riesgos,
+.lista-municipios,
+.lista-usuarios {
     flex: 1;
     overflow-y: auto;
     padding-right: 4px;
@@ -323,67 +355,74 @@ body {
 .lista-incidentes::-webkit-scrollbar-thumb,
 .lista-albergues::-webkit-scrollbar-thumb,
 .lista-riesgos::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    background: #1e2d45;
     border-radius: 4px;
 }
 
 /* ===== CARDS ===== */
 .incidente-card,
 .albergue-card,
-.riesgo-card {
-    background: #f8fafc;
+.riesgo-card,
+.municipio-card,
+.usuario-card {
+    background: #0d1524;
     border-radius: 8px;
     padding: 12px 14px;
     margin-bottom: 8px;
     cursor: pointer;
     transition: all 0.2s;
-    border-left: 4px solid #cbd5e1;
+    border-left: 3px solid #1e2d45;
 }
 
 .incidente-card:hover,
 .albergue-card:hover,
-.riesgo-card:hover {
+.riesgo-card:hover,
+.municipio-card:hover,
+.usuario-card:hover {
     transform: translateX(4px);
-    background: #f1f5f9;
+    background: #1a2332;
 }
 
-.incidente-card.prioridad-1 { border-left-color: #dc2626; background: #fef2f2; }
-.incidente-card.prioridad-2 { border-left-color: #f59e0b; background: #fffbeb; }
-.incidente-card.prioridad-3 { border-left-color: #10b981; background: #ecfdf5; }
+.incidente-card.prioridad-1 { border-left-color: #dc2626; }
+.incidente-card.prioridad-2 { border-left-color: #f97316; }
+.incidente-card.prioridad-3 { border-left-color: #10b981; }
 
 .incidente-tipo {
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    color: #e8edf5;
 }
 
 .incidente-desc {
     font-size: 0.8rem;
-    color: #475569;
+    color: #8a9bb5;
     margin: 4px 0;
 }
 
 .incidente-fecha {
     font-size: 0.7rem;
-    color: #94a3b8;
+    color: #4a5a7a;
 }
 
 .estado-badge {
     padding: 2px 10px;
     border-radius: 12px;
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.estado-pendiente { background: #dc2626; color: white; }
-.estado-en_proceso { background: #f59e0b; color: white; }
-.estado-en_revision { background: #8b5cf6; color: white; }
-.estado-resuelto { background: #10b981; color: white; }
-.estado-cancelado { background: #6b7280; color: white; }
+.estado-pendiente { background: rgba(220, 38, 38, 0.2); color: #f87171; }
+.estado-en_proceso { background: rgba(249, 115, 22, 0.2); color: #fb923c; }
+.estado-en_revision { background: rgba(139, 92, 246, 0.2); color: #a78bfa; }
+.estado-resuelto { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+.estado-cancelado { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
 
-/* ===== FORMULARIO DE REPORTE ===== */
+/* ===== FORMULARIO ===== */
 .form-reporte {
     display: flex;
     flex-direction: column;
@@ -399,7 +438,7 @@ body {
 .form-reporte label {
     font-size: 0.8rem;
     font-weight: 600;
-    color: #334155;
+    color: #8a9bb5;
 }
 
 .form-reporte select,
@@ -407,9 +446,11 @@ body {
 .form-reporte input[type="text"],
 .form-reporte input[type="file"] {
     padding: 8px 12px;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #1e2d45;
     border-radius: 6px;
     font-size: 0.9rem;
+    background: #0d1524;
+    color: #e8edf5;
     transition: border-color 0.3s;
 }
 
@@ -418,6 +459,11 @@ body {
 .form-reporte input:focus {
     outline: none;
     border-color: #dc2626;
+}
+
+.form-reporte textarea {
+    resize: vertical;
+    min-height: 80px;
 }
 
 .ubicacion-input {
@@ -431,22 +477,24 @@ body {
 
 .btn-ubicacion {
     padding: 8px 14px;
-    background: #e2e8f0;
-    border: none;
+    background: #1a2332;
+    border: 1px solid #1e2d45;
     border-radius: 6px;
     font-size: 0.8rem;
     cursor: pointer;
-    white-space: nowrap;
+    color: #8a9bb5;
     transition: all 0.3s;
+    white-space: nowrap;
 }
 
 .btn-ubicacion:hover {
-    background: #cbd5e1;
+    background: #1e2d45;
+    color: #e8edf5;
 }
 
 .btn-enviar {
     padding: 12px;
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    background: linear-gradient(135deg, #dc2626, #991b1b);
     color: white;
     border: none;
     border-radius: 8px;
@@ -459,7 +507,7 @@ body {
 
 .btn-enviar:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(220,38,38,0.3);
+    box-shadow: 0 4px 20px rgba(220, 38, 38, 0.3);
 }
 
 /* =============================================
@@ -471,22 +519,24 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 9999;
+    backdrop-filter: blur(4px);
 }
 
 .modal-content {
-    background: white;
+    background: #111927;
+    border: 1px solid #1e2d45;
     border-radius: 16px;
     width: 90%;
     max-width: 500px;
     max-height: 90vh;
     overflow: auto;
     padding: 24px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
 
 .modal-header {
@@ -497,7 +547,7 @@ body {
 }
 
 .modal-header h3 {
-    color: #1e3a8a;
+    color: #e8edf5;
     font-size: 1.2rem;
 }
 
@@ -506,7 +556,7 @@ body {
     border: none;
     font-size: 1.5rem;
     cursor: pointer;
-    color: #94a3b8;
+    color: #4a5a7a;
     transition: color 0.3s;
 }
 
@@ -515,7 +565,7 @@ body {
 }
 
 /* =============================================
-   TOAST NOTIFICATIONS
+   TOAST
    ============================================= */
 .toast-container {
     position: fixed;
@@ -533,46 +583,19 @@ body {
     color: white;
     font-size: 0.9rem;
     font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     animation: slideIn 0.3s ease;
     max-width: 350px;
 }
 
 .toast.success { background: #10b981; }
 .toast.error { background: #dc2626; }
-.toast.warning { background: #f59e0b; }
+.toast.warning { background: #f97316; }
 .toast.info { background: #3b82f6; }
 
 @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
-}
-
-/* =============================================
-   LOADING SPINNER
-   ============================================= */
-.loading-spinner {
-    text-align: center;
-    padding: 40px 0;
-    color: #94a3b8;
-    font-size: 0.9rem;
-}
-
-.loading-spinner::after {
-    content: '';
-    display: inline-block;
-    width: 20px;
-    height: 20px;
-    margin-left: 10px;
-    border: 3px solid #e2e8f0;
-    border-top-color: #dc2626;
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-    vertical-align: middle;
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
 }
 
 /* =============================================
@@ -605,7 +628,7 @@ body {
         width: 100%;
         height: 50vh;
         border-left: none;
-        border-top: 1px solid #e2e8f0;
+        border-top: 1px solid #1e2d45;
     }
     .map-container {
         height: 50vh;
@@ -619,15 +642,11 @@ body {
         font-size: 1rem;
     }
     .panel-tabs {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
     .tab-btn {
-        padding: 10px 6px;
-        font-size: 0.7rem;
-    }
-    .tab-filtros {
-        flex-direction: column;
-        gap: 4px;
+        padding: 10px 4px;
+        font-size: 0.65rem;
     }
     .modal-content {
         width: 95%;
@@ -636,38 +655,49 @@ body {
 }
 
 /* =============================================
-   MUNICIPIOS Y USUARIOS
+   LOADING
    ============================================= */
-.municipio-card,
-.usuario-card {
-    background: #f8fafc;
-    border-radius: 8px;
-    padding: 12px 14px;
-    margin-bottom: 8px;
-    transition: all 0.2s;
-    border-left: 4px solid #3b82f6;
+.loading-spinner {
+    text-align: center;
+    padding: 40px 0;
+    color: #4a5a7a;
+    font-size: 0.9rem;
 }
 
-.municipio-card:hover,
-.usuario-card:hover {
-    transform: translateX(4px);
-    background: #f1f5f9;
+.loading-spinner::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-left: 10px;
+    border: 3px solid #1e2d45;
+    border-top-color: #dc2626;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
 }
 
-.lista-municipios,
-.lista-usuarios {
-    flex: 1;
-    overflow-y: auto;
-    padding-right: 4px;
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
 
-.lista-municipios::-webkit-scrollbar,
-.lista-usuarios::-webkit-scrollbar {
-    width: 4px;
+/* =============================================
+   SCROLLBAR GLOBAL
+   ============================================= */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
 }
 
-.lista-municipios::-webkit-scrollbar-thumb,
-.lista-usuarios::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+::-webkit-scrollbar-track {
+    background: #0a0e17;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #1e2d45;
     border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #2a3d5a;
 }
