@@ -1,5 +1,5 @@
 // =====================================================
-// ZONAS DE RIESGO - MÓDULO CON LOGS
+// ZONAS DE RIESGO - MÓDULO COMPLETO
 // =====================================================
 
 let riesgosData = [];
@@ -161,10 +161,18 @@ async function editarZona(id) {
         const zona = await res.json();
         console.log('📦 [2] Datos de la zona:', zona);
         
+        // =============================================
+        // GUARDAR DATOS EN VARIABLES GLOBALES
+        // =============================================
         zonaEditandoId = id;
         zonaEditandoData = zona;
+        console.log('💾 [2] zonaEditandoData guardado:', zonaEditandoData);
         
-        limpiarEdicion();
+        // Limpiar polígono anterior (sin borrar los datos)
+        if (polygonEditando) {
+            mapa.removeLayer(polygonEditando);
+            polygonEditando = null;
+        }
         
         const geo = JSON.parse(zona.coordenadas_poligono);
         const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
@@ -234,6 +242,7 @@ function guardarPoligonoEditado() {
     console.log('💾 [3] GUARDAR POLÍGONO EDITADO - INICIO');
     console.log('💾 [3] polygonEditando:', polygonEditando);
     console.log('💾 [3] zonaEditandoData:', zonaEditandoData);
+    console.log('💾 [3] zonaEditandoId:', zonaEditandoId);
     
     if (!polygonEditando) {
         console.error('❌ [3] polygonEditando es null');
@@ -250,7 +259,6 @@ function guardarPoligonoEditado() {
     try {
         console.log('🔍 [3] Obteniendo puntos del polígono...');
         
-        // Obtener puntos actuales del polígono
         const latlngs = polygonEditando.getLatLngs()[0];
         console.log('📍 [3] LatLngs raw:', latlngs);
         
@@ -262,11 +270,9 @@ function guardarPoligonoEditado() {
         
         console.log(`📍 [3] Número de puntos: ${latlngs.length}`);
         
-        // Convertir a [lng, lat]
         const coordenadas = latlngs.map(c => [c.lng, c.lat]);
         console.log('📍 [3] Coordenadas [lng, lat]:', coordenadas);
         
-        // Cerrar el polígono (repetir el primer punto al final)
         coordenadas.push(coordenadas[0]);
         console.log('📍 [3] Coordenadas cerradas:', coordenadas);
         
@@ -332,7 +338,7 @@ async function enviarActualizacion(id, geojson) {
             console.log('✅ [4] ¡ÉXITO! Polígono actualizado');
             mostrarToast('✅ Polígono actualizado correctamente', 'success');
             limpiarEdicion();
-            await cargarRiegos();
+            cargarRiesgos(); // ← CORREGIDO: cargarRiesgos (no cargarRiegos)
         } else {
             console.error('❌ [4] Error del backend:', data);
             mostrarToast(`❌ ${data.error || 'Error al guardar'}`, 'error');
@@ -344,10 +350,31 @@ async function enviarActualizacion(id, geojson) {
 }
 
 // =====================================================
-// LIMPIAR EDICIÓN
+// LIMPIAR EDICIÓN (SIN BORRAR DATOS)
 // =====================================================
 function limpiarEdicion() {
     console.log('🧹 [5] Limpiando edición...');
+    
+    // SOLO LIMPIAR EL POLÍGONO DEL MAPA, NO LOS DATOS
+    if (polygonEditando) {
+        mapa.removeLayer(polygonEditando);
+        polygonEditando = null;
+    }
+    
+    // NO BORRAR zonaEditandoId ni zonaEditandoData aquí
+    // Se borrarán después de guardar exitosamente
+    
+    const btn = document.getElementById('btn-guardar-edicion');
+    if (btn) btn.remove();
+    
+    console.log('✅ [5] Edición limpiada (datos conservados)');
+}
+
+// =====================================================
+// LIMPIAR TODO DESPUÉS DE GUARDAR
+// =====================================================
+function limpiarCompleto() {
+    console.log('🧹 [6] Limpiando completo...');
     
     if (polygonEditando) {
         mapa.removeLayer(polygonEditando);
@@ -359,14 +386,14 @@ function limpiarEdicion() {
     const btn = document.getElementById('btn-guardar-edicion');
     if (btn) btn.remove();
     
-    console.log('✅ [5] Edición limpiada');
+    console.log('✅ [6] Limpieza completa');
 }
 
 // =====================================================
 // CANCELAR EDICIÓN
 // =====================================================
 function cancelarEdicionPoligono() {
-    limpiarEdicion();
+    limpiarCompleto();
     cerrarModal();
     mostrarToast('⏹️ Edición cancelada', 'info');
 }
@@ -388,7 +415,7 @@ async function eliminarZona(id) {
         
         if (res.ok) {
             mostrarToast('✅ Zona eliminada', 'success');
-            await cargarRiegos();
+            cargarRiesgos();
         } else {
             const data = await res.json();
             mostrarToast(`❌ ${data.error || 'Error al eliminar'}`, 'error');
@@ -401,7 +428,7 @@ async function eliminarZona(id) {
 // =====================================================
 // EXPORTAR GLOBALES
 // =====================================================
-window.cargarRiegos = cargarRiegos;
+window.cargarRiesgos = cargarRiesgos;
 window.editarZona = editarZona;
 window.eliminarZona = eliminarZona;
 window.cancelarEdicionPoligono = cancelarEdicionPoligono;
