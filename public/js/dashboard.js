@@ -558,23 +558,72 @@ function logout() {
 }
 
 // =====================================================
-// INICIALIZAR
+// INICIALIZAR DASHBOARD
 // =====================================================
 async function initDashboard() {
-    if (!verificarSesion()) return;
-    const user = obtenerUsuario();
-    if (!user) return;
-    
-    initMapa();
-    await cargarIncidentes();
-    await cargarAlbergues();
-    await cargarRiesgos();
-    
-    setInterval(() => {
-        cargarIncidentes();
-        cargarAlbergues();
-        cargarRiesgos();
-    }, 30000);
+    try {
+        console.log('🚀 Iniciando Dashboard...');
+        
+        // Verificar sesión SOLO si la función existe
+        if (typeof verificarSesion === 'function') {
+            if (!verificarSesion()) {
+                console.log('⛔ Sesión no válida, redirigiendo...');
+                window.location.href = '/login.html';
+                return;
+            }
+        } else {
+            console.warn('⚠️ verificarSesion no definida. Verificando token manualmente...');
+            // Verificación manual
+            const token = localStorage.getItem('token');
+            const user = localStorage.getItem('user');
+            if (!token || !user) {
+                window.location.href = '/login.html';
+                return;
+            }
+        }
+        
+        // Obtener usuario
+        const user = obtenerUsuario();
+        console.log('👤 Usuario:', user);
+        
+        if (!user) {
+            console.log('⚠️ No hay usuario, redirigiendo al login...');
+            window.location.href = '/login.html';
+            return;
+        }
+        
+        // Inicializar mapa (Leaflet)
+        console.log('🗺️ Inicializando mapa...');
+        initMapaDashboard();
+        
+        // Cargar datos
+        console.log('📡 Cargando datos...');
+        await cargarIncidentes();
+        await cargarAlbergues();
+        await cargarRiesgos();
+        
+        console.log('✅ Dashboard iniciado correctamente');
+        
+        // Recargar cada 30 segundos
+        setInterval(() => {
+            cargarIncidentes();
+            cargarAlbergues();
+            cargarRiesgos();
+        }, 30000);
+        
+    } catch (error) {
+        console.error('❌ Error en initDashboard:', error);
+        const mapaDiv = document.getElementById('mapa-dashboard');
+        if (mapaDiv) {
+            mapaDiv.innerHTML = `
+                <div style="padding: 40px; text-align: center; color: #dc2626;">
+                    <h3>❌ Error al cargar el dashboard</h3>
+                    <p>${error.message}</p>
+                    <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #1e3a8a; color: white; border: none; border-radius: 8px; cursor: pointer;">Recargar</button>
+                </div>
+            `;
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', initDashboard);
