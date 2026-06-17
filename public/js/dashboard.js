@@ -113,11 +113,12 @@ function initMapaDashboard() {
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         }).addTo(mapa);
         
-        // === CORRECCIÓN: Crear FeatureGroup para leaflet.draw ===
+        // Crear FeatureGroup
         if (!featureGroup) {
             featureGroup = L.featureGroup().addTo(mapa);
         }
         
+        // Crear control de dibujo
         if (!drawingControl) {
             drawingControl = new L.Control.Draw({
                 draw: {
@@ -175,6 +176,9 @@ function zoomOut() { if (mapa) mapa.zoomOut(); }
 // =====================================================
 // BOTONES QUE LLAMAN A MÓDULOS
 // =====================================================
+// =====================================================
+// ACTIVAR DIBUJO DE POLÍGONO
+// =====================================================
 function activarDibujoPoligono() {
     console.log('🖊️ Botón Dibujar presionado');
     
@@ -184,20 +188,31 @@ function activarDibujoPoligono() {
         return;
     }
     
-    // Verificar que drawingControl existe
-    if (!drawingControl) {
-        mostrarToast('⚠️ Herramienta de dibujo no disponible', 'warning');
-        return;
+    // Verificar que el control de dibujo existe y tiene el método
+    if (!drawingControl || typeof drawingControl.setDrawingMode !== 'function') {
+        // Recrear el control de dibujo si no existe o está mal
+        console.log('🔄 Recreando control de dibujo...');
+        
+        if (!featureGroup) {
+            featureGroup = L.featureGroup().addTo(mapa);
+        }
+        
+        drawingControl = new L.Control.Draw({
+            draw: {
+                polygon: { allowIntersection: false, showArea: true },
+                rectangle: true,
+                circle: false,
+                polyline: false,
+                marker: false
+            },
+            edit: {
+                featureGroup: featureGroup
+            }
+        });
+        mapa.addControl(drawingControl);
     }
     
-    // Verificar que la función existe en zonas.js (solo llamar una vez)
-    if (typeof window.activarDibujoPoligono === 'function' && 
-        window.activarDibujoPoligono !== activarDibujoPoligono) {
-        window.activarDibujoPoligono();
-        return;
-    }
-    
-    // Implementación directa (sin recursión)
+    // Verificar si ya estamos dibujando
     if (window.dibujando) {
         mostrarToast('⚠️ Ya estás dibujando', 'warning');
         return;
@@ -205,12 +220,24 @@ function activarDibujoPoligono() {
     
     window.dibujando = true;
     mostrarToast('✏️ Dibuja un polígono en el mapa', 'info');
-    drawingControl.setDrawingMode('polygon');
     
+    try {
+        drawingControl.setDrawingMode('polygon');
+    } catch (error) {
+        console.error('❌ Error al activar dibujo:', error);
+        mostrarToast('⚠️ Error al activar dibujo', 'error');
+        window.dibujando = false;
+        return;
+    }
+    
+    // Escuchar evento de dibujo completado
     mapa.once('draw:created', function(e) {
         const layer = e.layer;
         const coords = layer.getLatLngs()[0];
-        const geojson = { type: 'Polygon', coordinates: [coords.map(c => [c.lng, c.lat])] };
+        const geojson = { 
+            type: 'Polygon', 
+            coordinates: [coords.map(c => [c.lng, c.lat])] 
+        };
         window.dibujando = false;
         
         // Mostrar formulario
@@ -218,16 +245,16 @@ function activarDibujoPoligono() {
             window.mostrarFormularioZona(geojson, layer);
         } else {
             mostrarToast('⚠️ Formulario no disponible', 'warning');
-            mapa.removeLayer(layer);
+            if (layer && mapa) mapa.removeLayer(layer);
         }
     });
     
+    // Escuchar cancelación de dibujo
     mapa.once('draw:drawstop', function() {
         window.dibujando = false;
         mostrarToast('⏹️ Dibujo cancelado', 'info');
     });
 }
-
 function abrirFormularioMunicipio() {
     if (typeof window.abrirFormularioMunicipio === 'function') {
         window.abrirFormularioMunicipio();
