@@ -6,10 +6,7 @@ let incidentesData = [];
 let marcadoresIncidentes = [];
 
 // =====================================================
-// REFERENCIAS DOM
-// =====================================================
-const listaIncidentes = document.getElementById('lista-incidentes');  // ← AGREGADO
-const statsResueltos = document.getElementById('stats-resueltos');
+
 // =====================================================
 // ICONOS POR TIPO DE INCIDENTE
 // =====================================================
