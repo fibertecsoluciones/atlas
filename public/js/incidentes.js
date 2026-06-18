@@ -243,17 +243,12 @@ async function cargarIncidentes() {
     }
 }
 // =====================================================
-// ACTUALIZAR ESTADÍSTICAS (CORREGIDO)
+// ACTUALIZAR ESTADÍSTICAS - VERSIÓN DEFINITIVA
 // =====================================================
 function actualizarEstadisticas() {
     console.log('📊 Actualizando estadísticas...');
     
-    // Obtener referencias directamente (evitar usar variables globales)
-    const statsActivosEl = document.getElementById('stats-activos');
-    const statsProcesoEl = document.getElementById('stats-proceso');
-    const statsResueltosEl = document.getElementById('stats-resueltos');
-    const statsHoyEl = document.getElementById('stats-hoy');
-    
+    // Calcular valores
     const activos = incidentesData.filter(i => i.estado !== 'resuelto').length;
     const enProceso = incidentesData.filter(i => i.estado === 'en_proceso').length;
     const resueltos = incidentesData.filter(i => i.estado === 'resuelto').length;
@@ -261,11 +256,11 @@ function actualizarEstadisticas() {
         return new Date(i.fecha_reporte).toDateString() === new Date().toDateString();
     }).length;
     
-    // Actualizar DOM
-    if (statsActivosEl) statsActivosEl.textContent = activos;
-    if (statsProcesoEl) statsProcesoEl.textContent = enProceso;
-    if (statsResueltosEl) statsResueltosEl.textContent = resueltos;
-    if (statsHoyEl) statsHoyEl.textContent = hoy;
+    // Actualizar DOM directamente (SIN variables intermedias)
+    document.getElementById('stats-activos').textContent = activos;
+    document.getElementById('stats-proceso').textContent = enProceso;
+    document.getElementById('stats-resueltos').textContent = resueltos;
+    document.getElementById('stats-hoy').textContent = hoy;
     
     console.log(`📊 Activos: ${activos}, En proceso: ${enProceso}, Resueltos: ${resueltos}, Hoy: ${hoy}`);
 }
