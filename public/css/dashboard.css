@@ -1,5 +1,5 @@
 /* =============================================
-   DASHBOARD - ESTILO GLASS PROFESIONAL
+   DASHBOARD - ESTILO GLASS SOBRIO
    PROTECCIÓN CIVIL - SISTEMA ATLAS SAS
    ============================================= */
 
@@ -45,10 +45,10 @@ body {
 ::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); }
 ::-webkit-scrollbar-thumb { 
-    background: linear-gradient(180deg, var(--color-red), var(--color-red-dark));
+    background: var(--color-red);
     border-radius: 10px;
 }
-::-webkit-scrollbar-thumb:hover { background: var(--color-red); }
+::-webkit-scrollbar-thumb:hover { background: var(--color-red-dark); }
 
 /* =============================================
    3. HEADER GLASS
@@ -75,7 +75,7 @@ body {
     left: 10%;
     right: 10%;
     height: 1px;
-    background: linear-gradient(90deg, transparent, var(--color-red), transparent);
+    background: var(--color-red);
     opacity: 0.3;
 }
 
@@ -192,7 +192,7 @@ body {
     border-radius: 12px;
     border: 1px solid var(--border-glass);
     backdrop-filter: blur(8px);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
 }
@@ -204,7 +204,7 @@ body {
     left: 0;
     right: 0;
     height: 2px;
-    background: linear-gradient(90deg, transparent, var(--stat-color, var(--color-red)), transparent);
+    background: var(--stat-color, var(--color-red));
     opacity: 0.5;
 }
 
@@ -383,7 +383,7 @@ body {
     left: 20%;
     right: 20%;
     height: 2px;
-    background: linear-gradient(90deg, transparent, var(--color-red), transparent);
+    background: var(--color-red);
     border-radius: 2px;
 }
 
@@ -447,11 +447,11 @@ body {
 }
 
 /* =============================================
-   11. BOTONES GLASS
+   11. BOTONES
    ============================================= */
 .btn-agregar {
     padding: 6px 16px;
-    background: linear-gradient(135deg, var(--color-red), var(--color-red-dark));
+    background: var(--color-red);
     color: white;
     border: none;
     border-radius: 8px;
@@ -465,6 +465,7 @@ body {
 }
 
 .btn-agregar:hover {
+    background: var(--color-red-dark);
     transform: translateY(-2px);
     box-shadow: 0 8px 30px rgba(220, 38, 38, 0.25);
 }
@@ -495,7 +496,7 @@ body {
     padding: 14px 16px;
     margin-bottom: 8px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.3s ease;
     border: 1px solid var(--border-glass);
     backdrop-filter: blur(4px);
 }
@@ -638,7 +639,7 @@ body {
     bottom: 100px;
     right: 20px;
     z-index: 1000;
-    background: linear-gradient(135deg, #10b981, #059669);
+    background: #10b981;
     color: white;
     border: none;
     padding: 12px 24px;
@@ -732,7 +733,7 @@ body {
 
 .btn-enviar {
     padding: 14px;
-    background: linear-gradient(135deg, var(--color-red), var(--color-red-dark));
+    background: var(--color-red);
     color: white;
     border: none;
     border-radius: 10px;
@@ -745,6 +746,7 @@ body {
 }
 
 .btn-enviar:hover {
+    background: var(--color-red-dark);
     transform: translateY(-2px);
     box-shadow: 0 8px 40px rgba(220, 38, 38, 0.3);
 }
@@ -821,15 +823,15 @@ body {
     font-size: 0.9rem;
     color: white;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    animation: slideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: slideIn 0.4s ease;
     backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.toast.success { background: linear-gradient(135deg, #10b981, #059669); }
-.toast.error { background: linear-gradient(135deg, var(--color-red), var(--color-red-dark)); }
-.toast.warning { background: linear-gradient(135deg, #f97316, #ea580c); }
-.toast.info { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+.toast.success { background: #10b981; }
+.toast.error { background: var(--color-red); }
+.toast.warning { background: #f97316; }
+.toast.info { background: #3b82f6; }
 
 @keyframes slideIn {
     from { opacity: 0; transform: translateX(60px); }
@@ -896,7 +898,7 @@ body {
     max-height: 420px;
     overflow-y: auto;
     padding: 4px 6px 8px 4px;
-    animation: popupFadeIn 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: popupFadeIn 0.3s ease;
 }
 
 .leaflet-popup-content * { color: var(--text-primary) !important; }
@@ -905,7 +907,7 @@ body {
 .leaflet-popup-content::-webkit-scrollbar { width: 4px; }
 .leaflet-popup-content::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); border-radius: 4px; }
 .leaflet-popup-content::-webkit-scrollbar-thumb { 
-    background: linear-gradient(180deg, var(--color-red), var(--color-red-dark));
+    background: var(--color-red);
     border-radius: 4px;
 }
 
@@ -1100,13 +1102,4 @@ body {
 @keyframes popupFadeIn {
     0% { opacity: 0; transform: scale(0.95) translateY(8px); }
     100% { opacity: 1; transform: scale(1) translateY(0); }
-}
-
-@keyframes pulseGlow {
-    0%, 100% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.1); }
-    50% { box-shadow: 0 0 40px rgba(220, 38, 38, 0.2); }
-}
-
-.pulse-glow {
-    animation: pulseGlow 3s ease-in-out infinite;
 }
