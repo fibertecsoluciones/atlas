@@ -171,10 +171,7 @@ function construirPopupRiesgo(zona, coords) {
                     </div>
                 </div>
             </div>
-            <div class="popup-footer">
-                <span>ID: ${zona.id}</span>
-                <span>📍 ${coords.length} puntos</span>
-            </div>
+            
         </div>
     `;
 }
@@ -309,34 +306,233 @@ function mostrarBotonGuardarEdicion() {
 // =====================================================
 // GUARDAR POLÍGONO EDITADO
 // =====================================================
+// =====================================================
+// GUARDAR POLÍGONO EDITADO - GUARDA DIRECTO + FORMULARIO
+// =====================================================
 function guardarPoligonoEditado() {
-    if (!polygonEditando || !zonaEditandoData) {
+    console.log('💾 [3] GUARDAR POLÍGONO EDITADO - INICIO');
+    console.log('💾 [3] polygonEditando:', polygonEditando);
+    console.log('💾 [3] zonaEditandoData:', zonaEditandoData);
+    console.log('💾 [3] zonaEditandoId:', zonaEditandoId);
+    
+    if (!polygonEditando) {
+        console.error('❌ [3] polygonEditando es null');
         mostrarToast('⚠️ No hay polígono para guardar', 'warning');
         return;
     }
     
+    if (!zonaEditandoData) {
+        console.error('❌ [3] zonaEditandoData es null');
+        mostrarToast('⚠️ No hay datos de la zona', 'warning');
+        return;
+    }
+    
+    // =============================================
+    // PASO 1: GUARDAR EL POLÍGONO DIRECTO
+    // =============================================
     try {
+        console.log('🔍 [3] Obteniendo puntos del polígono...');
+        
         const latlngs = polygonEditando.getLatLngs()[0];
+        console.log('📍 [3] LatLngs raw:', latlngs);
+        
         if (!latlngs || latlngs.length < 3) {
+            console.error('❌ [3] El polígono no tiene suficientes puntos:', latlngs?.length);
             mostrarToast('⚠️ El polígono no tiene suficientes puntos', 'warning');
             return;
         }
         
+        console.log(`📍 [3] Número de puntos: ${latlngs.length}`);
+        
         const coordenadas = latlngs.map(c => [c.lng, c.lat]);
+        console.log('📍 [3] Coordenadas [lng, lat]:', coordenadas);
+        
         coordenadas.push(coordenadas[0]);
+        console.log('📍 [3] Coordenadas cerradas:', coordenadas);
         
         const geojson = {
             type: 'Polygon',
             coordinates: [coordenadas]
         };
         
-        if (!confirm(`¿Guardar cambios de "${zonaEditandoData.nombre}"?`)) return;
+        console.log('📦 [3] GeoJSON final:', JSON.stringify(geojson));
         
-        enviarActualizacion(zonaEditandoId, geojson);
+        // =============================================
+        // PASO 2: GUARDAR DIRECTO EN EL BACKEND
+        // =============================================
+        guardarPoligonoYMostrarFormulario(zonaEditandoId, geojson);
         
     } catch (error) {
-        console.error('❌ Error al obtener coordenadas:', error);
+        console.error('❌ [3] Error al obtener coordenadas:', error);
         mostrarToast('❌ Error al leer el polígono', 'error');
+    }
+}
+
+// =====================================================
+// GUARDAR POLÍGONO Y LUEGO MOSTRAR FORMULARIO
+// =====================================================
+async function guardarPoligonoYMostrarFormulario(id, geojson) {
+    try {
+        console.log('📤 [4] Guardando polígono en el backend...');
+        
+        const payload = {
+            nombre: zonaEditandoData.nombre,
+            tipo: zonaEditandoData.tipo,
+            nivel: zonaEditandoData.nivel,
+            descripcion: zonaEditandoData.descripcion || '',
+            poblacion_afectada: zonaEditandoData.poblacion_afectada || 0,
+            viviendas_afectadas: zonaEditandoData.viviendas_afectadas || 0,
+            coordenadas_poligono: JSON.stringify(geojson)
+        };
+        
+        console.log('📤 [4] Payload:', payload);
+        
+        const res = await fetch(`/api/zonas/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'X-Municipio-Slug': window.userData?.municipio?.slug || 'las-choapas'
+            },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        console.log('📥 [4] Respuesta:', data);
+        
+        if (res.ok) {
+            mostrarToast('✅ Polígono guardado correctamente', 'success');
+            
+            // =============================================
+            // PASO 3: ABRIR FORMULARIO PARA EDITAR DATOS
+            // =============================================
+            mostrarFormularioEdicion(id);
+            
+        } else {
+            mostrarToast(`❌ ${data.error || 'Error al guardar el polígono'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ [4] Error:', error);
+        mostrarToast('❌ Error de conexión', 'error');
+    }
+}
+
+// =====================================================
+// MOSTRAR FORMULARIO DE EDICIÓN (DATOS)
+// =====================================================
+function mostrarFormularioEdicion(id) {
+    if (!zonaEditandoData) {
+        mostrarToast('⚠️ No hay zona seleccionada', 'warning');
+        return;
+    }
+    
+    const zona = zonaEditandoData;
+    
+    modalTitulo.textContent = '✏️ Editar Datos de la Zona';
+    modalBody.innerHTML = `
+        <form id="form-zona-edit" class="form-reporte">
+            <div style="background:#e0f2fe;padding:8px 12px;border-radius:6px;margin-bottom:12px;font-size:0.8rem;color:#1e3a8a;">
+                ✅ El polígono ya fue guardado. Ahora puedes editar los datos.
+            </div>
+            <div class="form-group">
+                <label>Nombre de la zona *</label>
+                <input type="text" id="z-edit-nombre" value="${zona.nombre}" required>
+            </div>
+            <div class="form-group">
+                <label>Tipo de riesgo</label>
+                <select id="z-edit-tipo">
+                    <option value="inundacion" ${zona.tipo === 'inundacion' ? 'selected' : ''}>🌊 Inundación</option>
+                    <option value="deslizamiento" ${zona.tipo === 'deslizamiento' ? 'selected' : ''}>⛰️ Deslizamiento</option>
+                    <option value="incendio" ${zona.tipo === 'incendio' ? 'selected' : ''}>🔥 Incendio</option>
+                    <option value="sismo" ${zona.tipo === 'sismo' ? 'selected' : ''}>🌍 Sismo</option>
+                    <option value="vendaval" ${zona.tipo === 'vendaval' ? 'selected' : ''}>💨 Vendaval</option>
+                    <option value="otro" ${zona.tipo === 'otro' ? 'selected' : ''}>⚠️ Otro</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Nivel de riesgo</label>
+                <select id="z-edit-nivel">
+                    <option value="critico" ${zona.nivel === 'critico' ? 'selected' : ''}>🔴 Crítico</option>
+                    <option value="alto" ${zona.nivel === 'alto' ? 'selected' : ''}>🟠 Alto</option>
+                    <option value="medio" ${zona.nivel === 'medio' ? 'selected' : ''}>🟡 Medio</option>
+                    <option value="bajo" ${zona.nivel === 'bajo' ? 'selected' : ''}>🟢 Bajo</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea id="z-edit-descripcion" rows="2">${zona.descripcion || ''}</textarea>
+            </div>
+            <div class="form-group">
+                <label>Población afectada</label>
+                <input type="number" id="z-edit-poblacion" value="${zona.poblacion_afectada || 0}" min="0">
+            </div>
+            <div class="form-group">
+                <label>Viviendas afectadas</label>
+                <input type="number" id="z-edit-viviendas" value="${zona.viviendas_afectadas || 0}" min="0">
+            </div>
+            <div style="display:flex;gap:10px;margin-top:10px;">
+                <button type="submit" class="btn-enviar" style="flex:1;">💾 Guardar Datos</button>
+                <button type="button" class="btn-enviar" style="flex:1;background:#6b7280;" onclick="cancelarEdicionPoligono()">❌ Cancelar</button>
+            </div>
+        </form>
+    `;
+    
+    modalOverlay.style.display = 'flex';
+    
+    document.getElementById('form-zona-edit').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        await actualizarDatosZona(id);
+    });
+}
+
+// =====================================================
+// ACTUALIZAR SOLO DATOS (EL POLÍGONO YA ESTÁ GUARDADO)
+// =====================================================
+async function actualizarDatosZona(id) {
+    const nombre = document.getElementById('z-edit-nombre').value.trim();
+    const tipo = document.getElementById('z-edit-tipo').value;
+    const nivel = document.getElementById('z-edit-nivel').value;
+    const descripcion = document.getElementById('z-edit-descripcion').value.trim();
+    const poblacion = parseInt(document.getElementById('z-edit-poblacion').value) || 0;
+    const viviendas = parseInt(document.getElementById('z-edit-viviendas').value) || 0;
+    
+    if (!nombre) {
+        mostrarToast('⚠️ El nombre es requerido', 'warning');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/zonas/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'X-Municipio-Slug': window.userData?.municipio?.slug || 'las-choapas'
+            },
+            body: JSON.stringify({
+                nombre,
+                tipo,
+                nivel,
+                descripcion,
+                poblacion_afectada: poblacion,
+                viviendas_afectadas: viviendas
+                // NOTA: NO enviamos coordenadas_poligono porque ya está guardado
+            })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            mostrarToast('✅ Datos actualizados correctamente', 'success');
+            cerrarModal();
+            limpiarCompleto();
+            cargarRiesgos();
+        } else {
+            mostrarToast(`❌ ${data.error || 'Error al actualizar'}`, 'error');
+        }
+    } catch (error) {
+        console.error('❌ Error actualizando datos:', error);
+        mostrarToast('❌ Error de conexión', 'error');
     }
 }
 
