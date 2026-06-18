@@ -239,13 +239,9 @@ async function cargarIncidentes() {
         }
     }
 }
-// =====================================================
-// ACTUALIZAR ESTADÍSTICAS - VERSIÓN DEFINITIVA
-// =====================================================
 function actualizarEstadisticas() {
     console.log('📊 Actualizando estadísticas...');
     
-    // Calcular valores
     const activos = incidentesData.filter(i => i.estado !== 'resuelto').length;
     const enProceso = incidentesData.filter(i => i.estado === 'en_proceso').length;
     const resueltos = incidentesData.filter(i => i.estado === 'resuelto').length;
@@ -253,11 +249,46 @@ function actualizarEstadisticas() {
         return new Date(i.fecha_reporte).toDateString() === new Date().toDateString();
     }).length;
     
-    // Actualizar DOM directamente (SIN variables intermedias)
-    document.getElementById('stats-activos').textContent = activos;
-    document.getElementById('stats-proceso').textContent = enProceso;
-    document.getElementById('stats-resueltos').textContent = resueltos;
-    document.getElementById('stats-hoy').textContent = hoy;
+    // 🔍 LOGS PARA VERIFICAR
+    console.log('🔍 Buscando elementos del DOM...');
+    console.log('  - stats-activos:', document.getElementById('stats-activos'));
+    console.log('  - stats-proceso:', document.getElementById('stats-proceso'));
+    console.log('  - stats-resueltos:', document.getElementById('stats-resueltos'));
+    console.log('  - stats-hoy:', document.getElementById('stats-hoy'));
+    
+    // Intentar con getElementById directo (siempre funciona)
+    const elActivos = document.getElementById('stats-activos');
+    const elProceso = document.getElementById('stats-proceso');
+    const elResueltos = document.getElementById('stats-resueltos');
+    const elHoy = document.getElementById('stats-hoy');
+    
+    if (elActivos) {
+        elActivos.textContent = activos;
+        console.log('✅ stats-activos actualizado a:', activos);
+    } else {
+        console.error('❌ stats-activos NO ENCONTRADO');
+    }
+    
+    if (elProceso) {
+        elProceso.textContent = enProceso;
+        console.log('✅ stats-proceso actualizado a:', enProceso);
+    } else {
+        console.error('❌ stats-proceso NO ENCONTRADO');
+    }
+    
+    if (elResueltos) {
+        elResueltos.textContent = resueltos;
+        console.log('✅ stats-resueltos actualizado a:', resueltos);
+    } else {
+        console.error('❌ stats-resueltos NO ENCONTRADO');
+    }
+    
+    if (elHoy) {
+        elHoy.textContent = hoy;
+        console.log('✅ stats-hoy actualizado a:', hoy);
+    } else {
+        console.error('❌ stats-hoy NO ENCONTRADO');
+    }
     
     console.log(`📊 Activos: ${activos}, En proceso: ${enProceso}, Resueltos: ${resueltos}, Hoy: ${hoy}`);
 }

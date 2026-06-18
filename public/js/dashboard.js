@@ -540,3 +540,9 @@ window.getNivelColor = getNivelColor;
 window.mostrarFormularioZona = mostrarFormularioZona;
 
 document.addEventListener('DOMContentLoaded', initDashboard);
+
+console.log('🔍 Variables globales expuestas:');
+console.log('  - statsActivos:', window.statsActivos);
+console.log('  - statsProceso:', window.statsProceso);
+console.log('  - statsResueltos:', window.statsResueltos);
+console.log('  - statsHoy:', window.statsHoy);
