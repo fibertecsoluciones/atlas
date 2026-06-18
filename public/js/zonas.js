@@ -486,7 +486,7 @@ function mostrarFormularioEdicion(id) {
 }
 
 // =====================================================
-// ACTUALIZAR SOLO DATOS (EL POLÍGONO YA ESTÁ GUARDADO)
+// ACTUALIZAR SOLO DATOS (PERO ENVIAR POLÍGONO TAMBIÉN)
 // =====================================================
 async function actualizarDatosZona(id) {
     const nombre = document.getElementById('z-edit-nombre').value.trim();
@@ -499,6 +499,30 @@ async function actualizarDatosZona(id) {
     if (!nombre) {
         mostrarToast('⚠️ El nombre es requerido', 'warning');
         return;
+    }
+    
+    // Obtener el polígono actual (el que ya está guardado)
+    let geojson = null;
+    if (polygonEditando) {
+        const latlngs = polygonEditando.getLatLngs()[0];
+        if (latlngs && latlngs.length >= 3) {
+            const coordenadas = latlngs.map(c => [c.lng, c.lat]);
+            coordenadas.push(coordenadas[0]);
+            geojson = {
+                type: 'Polygon',
+                coordinates: [coordenadas]
+            };
+        }
+    }
+    
+    // Si no hay polígono, usar el que ya está en la BD
+    if (!geojson && zonaEditandoData) {
+        try {
+            geojson = JSON.parse(zonaEditandoData.coordenadas_poligono);
+        } catch(e) {
+            mostrarToast('⚠️ Error al obtener el polígono', 'error');
+            return;
+        }
     }
     
     try {
@@ -515,8 +539,8 @@ async function actualizarDatosZona(id) {
                 nivel,
                 descripcion,
                 poblacion_afectada: poblacion,
-                viviendas_afectadas: viviendas
-                // NOTA: NO enviamos coordenadas_poligono porque ya está guardado
+                viviendas_afectadas: viviendas,
+                coordenadas_poligono: JSON.stringify(geojson) // ← ENVIAR POLÍGONO
             })
         });
         
