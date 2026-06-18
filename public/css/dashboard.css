@@ -866,51 +866,101 @@ body {
 }
 
 /* =============================================
-   22. POPUP GLASS
+   POPUP GLASS - TAMAÑO PROPORCIONAL
    ============================================= */
+
+/* Contenedor principal del popup */
 .leaflet-popup-content-wrapper {
     background: var(--bg-glass) !important;
     backdrop-filter: blur(20px) saturate(180%) !important;
     -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-    border-radius: 16px !important;
+    border-radius: 12px !important;
     border: 1px solid var(--border-glass) !important;
-    box-shadow: 0 16px 64px rgba(0, 0, 0, 0.5) !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+    max-width: 320px !important;  /* ← TAMAÑO MÁXIMO FIJO */
+    min-width: 200px !important;  /* ← TAMAÑO MÍNIMO */
 }
 
+/* Punta del popup */
 .leaflet-popup-tip {
     background: var(--bg-glass) !important;
     border: 1px solid var(--border-glass) !important;
 }
 
+/* Botón cerrar */
 .leaflet-popup-close-button {
     color: var(--text-muted) !important;
-    font-size: 1.2rem !important;
-    padding: 8px 12px !important;
+    font-size: 1rem !important;
+    padding: 4px 8px !important;
     transition: color 0.3s ease !important;
 }
 
-.leaflet-popup-close-button:hover { color: var(--color-red) !important; }
+.leaflet-popup-close-button:hover { 
+    color: var(--color-red) !important; 
+}
 
+/* Contenido del popup - TAMAÑO CONTROLADO */
 .leaflet-popup-content {
     color: var(--text-primary) !important;
-    font-size: 0.85rem !important;
-    line-height: 1.5 !important;
-    max-height: 420px;
-    overflow-y: auto;
-    padding: 4px 6px 8px 4px;
+    font-size: 0.8rem !important;  /* ← TAMAÑO DE TEXTO FIJO */
+    line-height: 1.4 !important;
+    max-height: 300px !important;   /* ← ALTURA MÁXIMA */
+    overflow-y: auto !important;
+    padding: 4px 6px 6px 4px !important;
     animation: popupFadeIn 0.3s ease;
 }
 
-.leaflet-popup-content * { color: var(--text-primary) !important; }
-.leaflet-popup-content .text-muted { color: var(--text-muted) !important; }
+/* Forzar que TODO el contenido del popup sea legible */
+.leaflet-popup-content * { 
+    color: var(--text-primary) !important; 
+    font-size: 0.8rem !important;  /* ← TAMAÑO UNIFORME */
+}
 
-.leaflet-popup-content::-webkit-scrollbar { width: 4px; }
-.leaflet-popup-content::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.02); border-radius: 4px; }
+.leaflet-popup-content .text-muted { 
+    color: var(--text-muted) !important; 
+    font-size: 0.65rem !important;
+}
+
+.leaflet-popup-content .popup-nombre {
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+}
+
+.leaflet-popup-content .popup-badge {
+    font-size: 0.55rem !important;
+    padding: 1px 10px !important;
+}
+
+.leaflet-popup-content .popup-label {
+    font-size: 0.5rem !important;
+}
+
+.leaflet-popup-content .popup-value {
+    font-size: 0.75rem !important;
+}
+
+.leaflet-popup-content .popup-number {
+    font-size: 1rem !important;
+}
+
+/* Scroll del popup */
+.leaflet-popup-content::-webkit-scrollbar { 
+    width: 3px !important; 
+}
+.leaflet-popup-content::-webkit-scrollbar-track { 
+    background: rgba(255, 255, 255, 0.02); 
+    border-radius: 4px; 
+}
 .leaflet-popup-content::-webkit-scrollbar-thumb { 
     background: var(--color-red);
     border-radius: 4px;
 }
 
+/* Animación */
+@keyframes popupFadeIn {
+    0% { opacity: 0; transform: scale(0.95) translateY(6px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
 /* =============================================
    23. POPUP RIESGO (ESTRUCTURA)
    ============================================= */

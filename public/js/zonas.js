@@ -106,15 +106,18 @@ function renderizarMapaRiesgos() {
             const popupContent = construirPopupRiesgo(r, coords);
             
             const polygon = L.polygon(coords, {
-                color: color,
-                weight: 3,
-                fillColor: color,
-                fillOpacity: 0.25
-            }).addTo(mapa)
-              .bindPopup(popupContent, {
-                  maxWidth: 380,
-                  className: 'custom-popup'
-              });
+    color: color,
+    weight: 3,
+    fillColor: color,
+    fillOpacity: 0.25
+}).addTo(mapa)
+.bindPopup(popupContent, {
+    maxWidth: 280,      // ← MÁS PEQUEÑO
+    minWidth: 180,      // ← MÍNIMO
+    className: 'custom-popup',
+    autoPan: true,
+    keepInView: true
+});
             
             poligonosRiesgo.push(polygon);
         } catch(e) {
