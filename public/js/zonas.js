@@ -560,3 +560,4 @@ window.abrirFormularioEdicion = abrirFormularioEdicion;
 window.editarPoligonoDesdePopup = editarPoligonoDesdePopup;
 window.eliminarZona = eliminarZona;
 window.cancelarEdicionPoligono = cancelarEdicionPoligono;
+window.centrarEnZona = centrarEnZona;  
