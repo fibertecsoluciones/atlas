@@ -553,6 +553,65 @@ function getIconoPorNivel(nivel) {
 }
 
 // =====================================================
+// CENTRAR MAPA EN UNA ZONA DE RIESGO
+// =====================================================
+function centrarEnZona(id) {
+    console.log('📍 [6] Centrando en zona ID:', id);
+    
+    const zona = riesgosData.find(r => r.id === id);
+    if (!zona) {
+        console.error('❌ [6] Zona no encontrada');
+        mostrarToast('⚠️ Zona no encontrada', 'warning');
+        return;
+    }
+    
+    if (!mapa) {
+        console.error('❌ [6] Mapa no disponible');
+        mostrarToast('⚠️ Mapa no disponible', 'warning');
+        return;
+    }
+    
+    try {
+        const geo = JSON.parse(zona.coordenadas_poligono);
+        const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
+        
+        const latSum = coords.reduce((sum, c) => sum + c[0], 0);
+        const lngSum = coords.reduce((sum, c) => sum + c[1], 0);
+        const centerLat = latSum / coords.length;
+        const centerLng = lngSum / coords.length;
+        
+        mapa.setView([centerLat, centerLng], 15);
+        
+        poligonosRiesgo.forEach(p => {
+            p.setStyle({ weight: 3, opacity: 0.8 });
+        });
+        
+        const index = riesgosData.findIndex(r => r.id === id);
+        if (index !== -1 && poligonosRiesgo[index]) {
+            poligonosRiesgo[index].setStyle({
+                weight: 6,
+                opacity: 1,
+                color: '#ffffff'
+            });
+            poligonosRiesgo[index].openPopup();
+            
+            setTimeout(() => {
+                if (poligonosRiesgo[index]) {
+                    renderizarMapaRiesgos();
+                }
+            }, 3000);
+        }
+        
+        mostrarToast(`📍 ${zona.nombre}`, 'info');
+        console.log(`✅ [6] Mapa centrado en: ${zona.nombre}`);
+        
+    } catch (error) {
+        console.error('❌ [6] Error al centrar en zona:', error);
+        mostrarToast('❌ Error al centrar en la zona', 'error');
+    }
+}
+
+// =====================================================
 // EXPORTAR GLOBALES
 // =====================================================
 window.cargarRiesgos = cargarRiesgos;
@@ -560,4 +619,4 @@ window.abrirFormularioEdicion = abrirFormularioEdicion;
 window.editarPoligonoDesdePopup = editarPoligonoDesdePopup;
 window.eliminarZona = eliminarZona;
 window.cancelarEdicionPoligono = cancelarEdicionPoligono;
-window.centrarEnZona = centrarEnZona;  
+window.centrarEnZona = centrarEnZona;  // ← AHORA ESTÁ EXPORTADA
