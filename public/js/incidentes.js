@@ -6,6 +6,11 @@ let incidentesData = [];
 let marcadoresIncidentes = [];
 
 // =====================================================
+// REFERENCIAS DOM
+// =====================================================
+const statsResueltos = document.getElementById('stats-resueltos');  // ← AGREGADO
+
+// =====================================================
 // ICONOS POR TIPO DE INCIDENTE
 // =====================================================
 const ICONOS_INCIDENTES = {
@@ -75,9 +80,10 @@ function actualizarEstadisticas() {
         return new Date(i.fecha_reporte).toDateString() === new Date().toDateString();
     }).length;
     
+    // Actualizar DOM usando las referencias
     if (statsActivos) statsActivos.textContent = activos;
     if (statsProceso) statsProceso.textContent = enProceso;
-    if (statsResueltos) statsResueltos.textContent = resueltos;
+    if (statsResueltos) statsResueltos.textContent = resueltos;  // ← AHORA FUNCIONA
     if (statsHoy) statsHoy.textContent = hoy;
 }
 
@@ -144,17 +150,14 @@ function renderizarMapaIncidentes() {
     incidentesData.forEach(inc => {
         const iconoData = getIconoIncidente(inc.tipo);
         
-        // Color según prioridad (sobreescribe el color del icono)
         let color = iconoData.color;
         if (inc.prioridad === 1) color = '#dc2626';
         else if (inc.prioridad === 3) color = '#10b981';
         
-        // Tamaño según prioridad
         let tamaño = 36;
         if (inc.prioridad === 1) tamaño = 44;
         else if (inc.prioridad === 3) tamaño = 32;
         
-        // Icono con emoji
         const icono = crearIconoEmoji(iconoData.emoji, color, tamaño, true);
         
         const estadoTexto = {
@@ -165,14 +168,12 @@ function renderizarMapaIncidentes() {
             'cancelado': '❌ Cancelado'
         }[inc.estado] || inc.estado;
         
-        // Prioridad texto
         const prioridadTexto = inc.prioridad === 1 ? '🔴 Alta' : inc.prioridad === 2 ? '🟠 Media' : '🟢 Baja';
         
         const marker = L.marker([inc.latitud, inc.longitud], { icon: icono })
             .addTo(mapa)
             .bindPopup(`
                 <div style="min-width: 220px; max-width: 300px;">
-                    <!-- CABECERA -->
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">
                         <div style="font-size:2rem;">${iconoData.emoji}</div>
                         <div>
@@ -183,19 +184,15 @@ function renderizarMapaIncidentes() {
                         </div>
                     </div>
                     
-                    <!-- DESCRIPCIÓN -->
                     <div style="font-size:0.8rem; color:#c8d2e3; margin-bottom:8px;">${inc.descripcion || 'Sin descripción'}</div>
                     
-                    <!-- INFO -->
                     <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
                         <span style="font-size:0.7rem; color:#8a9bb5;">📅 ${formatFecha(inc.fecha_reporte)}</span>
                         <span style="font-size:0.7rem; color:#8a9bb5;">🎯 ${prioridadTexto}</span>
                     </div>
                     
-                    <!-- NUEVO BADGE -->
                     ${inc.es_nuevo === 'nuevo' ? '<div style="text-align:center; padding:2px; background:rgba(220,38,38,0.1); border-radius:4px; margin-bottom:8px; font-size:0.7rem; color:#f87171;">🔴 NUEVO</div>' : ''}
                     
-                    <!-- BOTONES DE ACCIÓN -->
                     <div style="display:flex; gap:6px; flex-wrap:wrap; border-top:1px solid rgba(255,255,255,0.05); padding-top:8px;">
                         <button onclick="cambiarEstadoIncidente(${inc.id}, 'en_proceso')" 
                                 style="flex:1; background:#f59e0b; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.65rem; cursor:pointer;">
@@ -246,7 +243,7 @@ async function cambiarEstadoIncidente(id, nuevoEstado) {
         
         if (res.ok) {
             mostrarToast(`✅ Estado actualizado a ${nuevoEstado}`, 'success');
-            await cargarIncidentes(); // Recarga completa (incluye estadísticas)
+            await cargarIncidentes();
         } else {
             mostrarToast(`❌ ${data.error || 'Error al actualizar'}`, 'error');
         }
@@ -273,7 +270,7 @@ async function eliminarIncidente(id) {
         
         if (res.ok) {
             mostrarToast('✅ Incidente eliminado', 'success');
-            await cargarIncidentes(); // Recarga completa
+            await cargarIncidentes();
         } else {
             const data = await res.json();
             mostrarToast(`❌ ${data.error || 'Error al eliminar'}`, 'error');
