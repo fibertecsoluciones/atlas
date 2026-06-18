@@ -1,199 +1,259 @@
-const express = require('express');
-const router = express.Router();
-const pool = require('../config/database');
-const tenantMiddleware = require('../middleware/tenant');
+// =====================================================
+// INCIDENTES - MÓDULO COMPLETO (CON POPUP MEJORADO + ACCIONES)
+// =====================================================
 
-// Aplicar middleware multi-tenant
-router.use(tenantMiddleware);
+let incidentesData = [];
+let marcadoresIncidentes = [];
 
 // =====================================================
-// GET: Obtener incidentes del municipio actual
+// CARGAR INCIDENTES
 // =====================================================
-router.get('/', async (req, res) => {
-    try {
-        const { estado, tipo, limite = 50 } = req.query;
-        
-        let query = `
-            SELECT i.*, u.nombre_completo as asignado_nombre
-            FROM incidentes i
-            LEFT JOIN usuarios u ON i.asignado_a = u.id
-            WHERE i.municipio_id = $1
-        `;
-        const params = [req.municipioId];
-        
-        if (estado) {
-            query += ` AND i.estado = $${params.length + 1}`;
-            params.push(estado);
-        }
-        
-        if (tipo) {
-            query += ` AND i.tipo = $${params.length + 1}`;
-            params.push(tipo);
-        }
-        
-        query += ` ORDER BY i.fecha_reporte DESC LIMIT $${params.length + 1}`;
-        params.push(limite);
-        
-        const result = await pool.query(query, params);
-        res.json(result.rows);
-        
-    } catch (error) {
-        console.error('❌ Error en GET /incidentes:', error);
-        res.status(500).json({ error: 'Error al obtener incidentes' });
+async function cargarIncidentes() {
+    console.log('📡 Cargando incidentes...');
+    
+    // Verificar que userData esté disponible globalmente
+    if (!window.userData?.municipio?.slug) {
+        console.warn('⚠️ No hay municipio seleccionado');
+        return;
     }
-});
-
-// =====================================================
-// GET: Incidentes para el mapa
-// =====================================================
-router.get('/mapa', async (req, res) => {
+    
     try {
-        const result = await pool.query(`
-            SELECT 
-                id, 
-                latitud, 
-                longitud, 
-                tipo, 
-                descripcion, 
-                estado, 
-                prioridad, 
-                foto_url, 
-                fecha_reporte, 
-                direccion_aproximada,
-                CASE 
-                    WHEN EXTRACT(EPOCH FROM (NOW() - fecha_reporte)) < 300 THEN 'nuevo'
-                    ELSE 'antiguo'
-                END as es_nuevo
-            FROM incidentes
-            WHERE municipio_id = $1 AND estado != 'resuelto'
-            ORDER BY 
-                CASE WHEN prioridad = 1 THEN 1 ELSE 2 END,
-                fecha_reporte DESC
-        `, [req.municipioId]);
-        
-        res.json(result.rows);
-        
-    } catch (error) {
-        console.error('❌ Error en GET /incidentes/mapa:', error);
-        res.status(500).json({ error: 'Error al obtener incidentes para mapa' });
-    }
-});
-
-// =====================================================
-// POST: Crear nuevo incidente
-// =====================================================
-router.post('/', async (req, res) => {
-    try {
-        const {
-            latitud,
-            longitud,
-            direccion_aproximada,
-            tipo,
-            descripcion,
-            foto_url,
-            ciudadano_nombre,
-            ciudadano_telefono
-        } = req.body;
-        
-        if (!latitud || !longitud) {
-            return res.status(400).json({ error: 'La ubicación es requerida' });
-        }
-        
-        if (!tipo || !descripcion) {
-            return res.status(400).json({ error: 'Tipo y descripción son requeridos' });
-        }
-        
-        let prioridad = 2;
-        const tiposAltaPrioridad = ['incendio', 'explosion', 'rescate'];
-        if (tiposAltaPrioridad.includes(tipo)) {
-            prioridad = 1;
-        }
-        
-        const result = await pool.query(`
-            INSERT INTO incidentes (
-                municipio_id, 
-                latitud, 
-                longitud, 
-                direccion_aproximada,
-                tipo, 
-                descripcion, 
-                foto_url, 
-                ciudadano_nombre,
-                ciudadano_telefono, 
-                prioridad, 
-                estado
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pendiente')
-            RETURNING id
-        `, [
-            req.municipioId, 
-            latitud, 
-            longitud, 
-            direccion_aproximada,
-            tipo, 
-            descripcion, 
-            foto_url, 
-            ciudadano_nombre || 'Anónimo',
-            ciudadano_telefono, 
-            prioridad
-        ]);
-        
-        res.json({ 
-            success: true, 
-            id: result.rows[0].id,
-            mensaje: 'Incidente reportado exitosamente'
+        const res = await fetch(`/api/incidentes/mapa`, {
+            headers: {
+                'X-Municipio-Slug': window.userData.municipio.slug,
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
         });
         
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+        
+        incidentesData = await res.json();
+        console.log('📡 Incidentes recibidos:', incidentesData.length);
+        
+        // Actualizar estadísticas
+        const activos = incidentesData.filter(i => i.estado !== 'resuelto').length;
+        const enProceso = incidentesData.filter(i => i.estado === 'en_proceso').length;
+        const resueltos = incidentesData.filter(i => i.estado === 'resuelto').length;
+        const hoy = incidentesData.filter(i => {
+            return new Date(i.fecha_reporte).toDateString() === new Date().toDateString();
+        }).length;
+        
+        if (statsActivos) statsActivos.textContent = activos;
+        if (statsProceso) statsProceso.textContent = enProceso;
+        if (statsResueltos) statsResueltos.textContent = resueltos;
+        if (statsHoy) statsHoy.textContent = hoy;
+        
+        renderizarListaIncidentes();
+        renderizarMapaIncidentes();
+        
     } catch (error) {
-        console.error('❌ Error en POST /incidentes:', error);
-        res.status(500).json({ error: 'Error al crear incidente' });
+        console.error('❌ Error cargando incidentes:', error);
+        if (listaIncidentes) {
+            listaIncidentes.innerHTML = '<div class="error">❌ Error al cargar incidentes</div>';
+        }
     }
-});
+}
 
 // =====================================================
-// PUT: Actualizar estado de incidente (SIN AUTENTICACIÓN TEMPORAL)
+// RENDERIZAR LISTA DE INCIDENTES
 // =====================================================
-router.put('/:id/estado', async (req, res) => {
+function renderizarListaIncidentes() {
+    if (!listaIncidentes) return;
+    
+    const filtroEstado = document.getElementById('filtro-estado')?.value || 'todos';
+    const filtroTipo = document.getElementById('filtro-tipo')?.value || 'todos';
+    
+    let filtrados = incidentesData;
+    if (filtroEstado !== 'todos') {
+        filtrados = filtrados.filter(i => i.estado === filtroEstado);
+    }
+    if (filtroTipo !== 'todos') {
+        filtrados = filtrados.filter(i => i.tipo === filtroTipo);
+    }
+    
+    if (filtrados.length === 0) {
+        listaIncidentes.innerHTML = '<div class="loading-spinner">No hay incidentes</div>';
+        return;
+    }
+    
+    listaIncidentes.innerHTML = filtrados.map(inc => {
+        const estadoText = {
+            'pendiente': 'Pendiente',
+            'en_proceso': 'En proceso',
+            'en_revision': 'En revisión',
+            'resuelto': 'Resuelto',
+            'cancelado': 'Cancelado'
+        }[inc.estado] || inc.estado;
+        
+        return `
+            <div class="incidente-card prioridad-${inc.prioridad}">
+                <div class="incidente-tipo">
+                    <span>🚨 ${inc.tipo.toUpperCase()}</span>
+                    <span class="estado-badge estado-${inc.estado}">${estadoText}</span>
+                </div>
+                <div class="incidente-desc">
+                    ${inc.descripcion?.substring(0, 80) || 'Sin descripción'}
+                    ${inc.descripcion?.length > 80 ? '...' : ''}
+                </div>
+                <div class="incidente-fecha">
+                    📅 ${formatFecha(inc.fecha_reporte)}
+                    ${inc.es_nuevo === 'nuevo' ? ' 🔴 NUEVO' : ''}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// =====================================================
+// RENDERIZAR INCIDENTES EN EL MAPA (CON POPUP MEJORADO)
+// =====================================================
+function renderizarMapaIncidentes() {
+    if (!mapa) return;
+    
+    marcadoresIncidentes.forEach(m => mapa.removeLayer(m));
+    marcadoresIncidentes = [];
+    
+    incidentesData.forEach(inc => {
+        // Determinar color según prioridad
+        let color = '#ef4444';
+        if (inc.prioridad === 2) color = '#f59e0b';
+        if (inc.prioridad === 3) color = '#10b981';
+        
+        // Tamaño según prioridad
+        let tamaño = 32;
+        if (inc.prioridad === 1) tamaño = 38;
+        
+        // Icono
+        const icono = crearIconoEmoji('🚨', color, tamaño, true);
+        
+        // Estado para mostrar en el popup
+        const estadoTexto = {
+            'pendiente': '⏳ Pendiente',
+            'en_proceso': '🔄 En proceso',
+            'en_revision': '🔍 En revisión',
+            'resuelto': '✅ Resuelto',
+            'cancelado': '❌ Cancelado'
+        }[inc.estado] || inc.estado;
+        
+        const marker = L.marker([inc.latitud, inc.longitud], { icon: icono })
+            .addTo(mapa)
+            .bindPopup(`
+                <div style="min-width: 220px; max-width: 300px;">
+                    <!-- CABECERA -->
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">
+                        <div style="font-size:1.8rem;">🚨</div>
+                        <div>
+                            <div style="font-weight:700; font-size:1rem; color:#e8edf5;">${inc.tipo.toUpperCase()}</div>
+                            <span style="font-size:0.6rem; padding:2px 10px; border-radius:12px; background:${color}33; color:${color}; border:1px solid ${color};">
+                                ${estadoTexto}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- DESCRIPCIÓN -->
+                    <div style="font-size:0.8rem; color:#c8d2e3; margin-bottom:8px;">${inc.descripcion || 'Sin descripción'}</div>
+                    
+                    <!-- FECHA -->
+                    <div style="font-size:0.7rem; color:#8a9bb5; margin-bottom:8px;">📅 ${formatFecha(inc.fecha_reporte)}</div>
+                    
+                    <!-- NUEVO BADGE -->
+                    ${inc.es_nuevo === 'nuevo' ? '<div style="text-align:center; padding:2px; background:rgba(220,38,38,0.1); border-radius:4px; margin-bottom:8px; font-size:0.7rem; color:#f87171;">🔴 NUEVO</div>' : ''}
+                    
+                    <!-- BOTONES DE ACCIÓN -->
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; border-top:1px solid rgba(255,255,255,0.05); padding-top:8px;">
+                        <button onclick="cambiarEstadoIncidente(${inc.id}, 'en_proceso')" 
+                                style="flex:1; background:#f59e0b; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.65rem; cursor:pointer;">
+                            🔄 Proceso
+                        </button>
+                        <button onclick="cambiarEstadoIncidente(${inc.id}, 'resuelto')" 
+                                style="flex:1; background:#10b981; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.65rem; cursor:pointer;">
+                            ✅ Resolver
+                        </button>
+                        <button onclick="eliminarIncidente(${inc.id})" 
+                                style="flex:1; background:#dc2626; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.65rem; cursor:pointer;">
+                            🗑️ Eliminar
+                        </button>
+                    </div>
+                </div>
+            `, {
+                maxWidth: 320,
+                className: 'custom-popup'
+            });
+        
+        marcadoresIncidentes.push(marker);
+    });
+}
+
+// =====================================================
+// FILTRAR INCIDENTES
+// =====================================================
+function filtrarIncidentes() {
+    renderizarListaIncidentes();
+}
+
+// =====================================================
+// CAMBIAR ESTADO DE INCIDENTE
+// =====================================================
+async function cambiarEstadoIncidente(id, nuevoEstado) {
     try {
-        const { id } = req.params;
-        const { estado, comentarios } = req.body;
+        const res = await fetch(`/api/incidentes/${id}/estado`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'X-Municipio-Slug': window.userData?.municipio?.slug || 'las-choapas'
+            },
+            body: JSON.stringify({ estado: nuevoEstado })
+        });
         
-        // Verificar que el incidente existe
-        const checkResult = await pool.query(
-            'SELECT id FROM incidentes WHERE id = $1 AND municipio_id = $2',
-            [id, req.municipioId]
-        );
+        const data = await res.json();
         
-        if (checkResult.rows.length === 0) {
-            return res.status(404).json({ error: 'Incidente no encontrado' });
+        if (res.ok) {
+            mostrarToast(`✅ Estado actualizado a ${nuevoEstado}`, 'success');
+            cargarIncidentes();
+        } else {
+            mostrarToast(`❌ ${data.error || 'Error al actualizar'}`, 'error');
         }
-        
-        let query = 'UPDATE incidentes SET estado = $1, fecha_actualizacion = NOW()';
-        const params = [estado];
-        
-        if (estado === 'asignado') {
-            query += ', fecha_asignacion = NOW()';
-        }
-        
-        if (estado === 'resuelto') {
-            query += ', fecha_resolucion = NOW()';
-        }
-        
-        if (comentarios) {
-            query += `, comentarios_internos = $${params.length + 1}`;
-            params.push(comentarios);
-        }
-        
-        query += ` WHERE id = $${params.length + 1}`;
-        params.push(id);
-        
-        await pool.query(query, params);
-        
-        res.json({ success: true, mensaje: 'Estado actualizado' });
-        
     } catch (error) {
-        console.error('❌ Error en PUT /incidentes/:id/estado:', error);
-        res.status(500).json({ error: 'Error al actualizar estado' });
+        console.error('Error:', error);
+        mostrarToast('❌ Error de conexión', 'error');
     }
-});
+}
 
-module.exports = router;
+// =====================================================
+// ELIMINAR INCIDENTE
+// =====================================================
+async function eliminarIncidente(id) {
+    if (!confirm('¿Estás seguro de eliminar este incidente?')) return;
+    
+    try {
+        const res = await fetch(`/api/incidentes/${id}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                'X-Municipio-Slug': window.userData?.municipio?.slug || 'las-choapas'
+            }
+        });
+        
+        if (res.ok) {
+            mostrarToast('✅ Incidente eliminado', 'success');
+            cargarIncidentes();
+        } else {
+            const data = await res.json();
+            mostrarToast(`❌ ${data.error || 'Error al eliminar'}`, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        mostrarToast('❌ Error de conexión', 'error');
+    }
+}
+
+// =====================================================
+// EXPORTAR FUNCIONES GLOBALES
+// =====================================================
+window.cargarIncidentes = cargarIncidentes;
+window.filtrarIncidentes = filtrarIncidentes;
+window.cambiarEstadoIncidente = cambiarEstadoIncidente;
+window.eliminarIncidente = eliminarIncidente;
