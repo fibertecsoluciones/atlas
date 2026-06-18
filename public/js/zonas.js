@@ -1,5 +1,5 @@
 // =====================================================
-// ZONAS DE RIESGO - MÓDULO COMPLETO
+// ZONAS DE RIESGO - MÓDULO COMPLETO (SOLO LÓGICA)
 // =====================================================
 
 let riesgosData = [];
@@ -12,10 +12,10 @@ let zonaEditandoData = null;
 // CARGAR ZONAS DE RIESGO
 // =====================================================
 async function cargarRiesgos() {
-    console.log('📡 [1] Cargando zonas de riesgo...');
+    console.log('📡 Cargando zonas de riesgo...');
     
     if (!window.userData?.municipio?.slug) {
-        console.warn('⚠️ [1] No hay municipio seleccionado');
+        console.warn('⚠️ No hay municipio seleccionado');
         return;
     }
     
@@ -27,14 +27,12 @@ async function cargarRiesgos() {
             }
         });
         
-        console.log('📡 [1] Respuesta HTTP:', res.status);
-        
         if (!res.ok) {
             throw new Error(`HTTP ${res.status}`);
         }
         
         riesgosData = await res.json();
-        console.log('📡 [1] Zonas recibidas:', riesgosData.length);
+        console.log('📡 Zonas recibidas:', riesgosData.length);
         
         if (statsRiesgos) statsRiesgos.textContent = riesgosData.length;
         
@@ -42,7 +40,7 @@ async function cargarRiesgos() {
         renderizarMapaRiesgos();
         
     } catch (error) {
-        console.error('❌ [1] Error cargando zonas:', error);
+        console.error('❌ Error cargando zonas:', error);
         if (listaRiesgos) {
             listaRiesgos.innerHTML = '<div class="error">❌ Error al cargar zonas de riesgo</div>';
         }
@@ -50,47 +48,40 @@ async function cargarRiesgos() {
 }
 
 // =====================================================
-// RENDERIZAR LISTA DE ZONAS CON CLICK PARA CENTRAR
+// RENDERIZAR LISTA DE ZONAS (SOLO DATOS, NO HTML)
 // =====================================================
 function renderizarListaRiesgos() {
     if (!listaRiesgos) return;
     
     if (riesgosData.length === 0) {
-        listaRiesgos.innerHTML = `
-            <div class="loading-spinner">No hay zonas de riesgo</div>
-            <div style="text-align:center;margin-top:20px;">
-                <p style="color:#6b7f9f;font-size:0.9rem;">
-                    Haz clic en "✏️ Dibujar" para crear una zona
-                </p>
-            </div>
-        `;
+        listaRiesgos.innerHTML = '<div class="loading-spinner">No hay zonas de riesgo</div>';
         return;
     }
     
-    listaRiesgos.innerHTML = riesgosData.map(r => `
-        <div class="riesgo-card" onclick="centrarEnZona(${r.id})" style="cursor:pointer;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div>
+    // Delegar la construcción del HTML a una función de renderizado
+    listaRiesgos.innerHTML = construirTarjetasRiesgo(riesgosData);
+}
+
+// =====================================================
+// CONSTRUIR TARJETAS DE RIESGO (FUNCIÓN PURA)
+// =====================================================
+function construirTarjetasRiesgo(data) {
+    return data.map(r => `
+        <div class="riesgo-card" data-id="${r.id}" onclick="centrarEnZona(${r.id})">
+            <div class="riesgo-card-header">
+                <div class="riesgo-card-titulo">
                     <strong>⚠️ ${r.nombre}</strong>
-                    <span style="font-size:0.7rem;padding:2px 10px;border-radius:12px;margin-left:10px;background:${getNivelColor(r.nivel)};color:white;">
-                        ${r.nivel?.toUpperCase() || 'MEDIO'}
-                    </span>
+                    <span class="riesgo-nivel ${r.nivel || 'medio'}">${r.nivel?.toUpperCase() || 'MEDIO'}</span>
                 </div>
-                <div>
-                    <button onclick="event.stopPropagation();editarZona(${r.id})" 
-                            style="background:#3b82f6;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;margin-left:5px;">
-                        ✏️
-                    </button>
-                    <button onclick="event.stopPropagation();eliminarZona(${r.id})" 
-                            style="background:#dc2626;color:white;border:none;padding:4px 10px;border-radius:4px;cursor:pointer;margin-left:5px;">
-                        🗑️
-                    </button>
+                <div class="riesgo-card-acciones">
+                    <button class="btn-editar" onclick="event.stopPropagation();editarZona(${r.id})">✏️</button>
+                    <button class="btn-eliminar" onclick="event.stopPropagation();eliminarZona(${r.id})">🗑️</button>
                 </div>
             </div>
-            <div style="font-size:0.8rem;color:#8a9bb5;margin-top:4px;">
+            <div class="riesgo-card-info">
                 ${r.tipo || 'Sin tipo'} | ${r.descripcion || ''}
             </div>
-            <div style="font-size:0.7rem;color:#6b7f9f;margin-top:4px;">
+            <div class="riesgo-card-stats">
                 👥 ${r.poblacion_afectada || 0} personas | 🏠 ${r.viviendas_afectadas || 0} viviendas
             </div>
         </div>
@@ -98,7 +89,7 @@ function renderizarListaRiesgos() {
 }
 
 // =====================================================
-// RENDERIZAR ZONAS EN EL MAPA
+// RENDERIZAR ZONAS EN EL MAPA (SOLO LÓGICA)
 // =====================================================
 function renderizarMapaRiesgos() {
     if (!mapa) return;
@@ -111,11 +102,8 @@ function renderizarMapaRiesgos() {
             const geo = JSON.parse(r.coordenadas_poligono);
             const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
             
-            let color = '#f59e0b';
-            if (r.nivel === 'critico') color = '#dc2626';
-            else if (r.nivel === 'alto') color = '#f97316';
-            else if (r.nivel === 'medio') color = '#f59e0b';
-            else color = '#10b981';
+            const color = getColorPorNivel(r.nivel);
+            const popupContent = construirPopupRiesgo(r, coords);
             
             const polygon = L.polygon(coords, {
                 color: color,
@@ -123,13 +111,10 @@ function renderizarMapaRiesgos() {
                 fillColor: color,
                 fillOpacity: 0.25
             }).addTo(mapa)
-              .bindPopup(`
-                  <b>⚠️ ${r.nombre}</b><br>
-                  Tipo: ${r.tipo || 'No especificado'}<br>
-                  Nivel: ${r.nivel?.toUpperCase() || 'MEDIO'}<br>
-                  👥 ${r.poblacion_afectada || 0} personas<br>
-                  🏠 ${r.viviendas_afectadas || 0} viviendas
-              `);
+              .bindPopup(popupContent, {
+                  maxWidth: 380,
+                  className: 'custom-popup'
+              });
             
             poligonosRiesgo.push(polygon);
         } catch(e) {
@@ -139,10 +124,125 @@ function renderizarMapaRiesgos() {
 }
 
 // =====================================================
-// EDITAR ZONA - CON LOGS
+// CONSTRUIR POPUP (FUNCIÓN PURA)
+// =====================================================
+function construirPopupRiesgo(zona, coords) {
+    const icono = getIconoPorNivel(zona.nivel);
+    const nivelTexto = zona.nivel?.toUpperCase() || 'MEDIO';
+    const color = getColorPorNivel(zona.nivel);
+    
+    return `
+        <div class="popup-riesgo">
+            <div class="popup-header">
+                <div class="popup-icon">${icono}</div>
+                <div class="popup-titulo">
+                    <div class="popup-nombre">${zona.nombre}</div>
+                    <span class="popup-badge ${zona.nivel || 'medio'}">${nivelTexto}</span>
+                </div>
+            </div>
+            <div class="popup-body">
+                <div class="popup-grid">
+                    <div class="popup-item">
+                        <span class="popup-label">Tipo</span>
+                        <span class="popup-value">${zona.tipo ? zona.tipo.charAt(0).toUpperCase() + zona.tipo.slice(1) : 'No especificado'}</span>
+                    </div>
+                    <div class="popup-item">
+                        <span class="popup-label">Creado</span>
+                        <span class="popup-value">${new Date(zona.fecha_creacion).toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                    </div>
+                </div>
+                ${zona.descripcion ? `
+                    <div class="popup-descripcion">
+                        <span class="popup-label">📝 Descripción</span>
+                        <p>${zona.descripcion}</p>
+                    </div>
+                ` : ''}
+                <div class="popup-stats">
+                    <div class="popup-stat">
+                        <span class="popup-number">${zona.poblacion_afectada || 0}</span>
+                        <span class="popup-label">👥 Personas</span>
+                    </div>
+                    <div class="popup-stat">
+                        <span class="popup-number">${zona.viviendas_afectadas || 0}</span>
+                        <span class="popup-label">🏠 Viviendas</span>
+                    </div>
+                </div>
+            </div>
+            <div class="popup-footer">
+                <span>ID: ${zona.id}</span>
+                <span>📍 ${coords.length} puntos</span>
+            </div>
+        </div>
+    `;
+}
+
+// =====================================================
+// FUNCIONES AUXILIARES PURAS
+// =====================================================
+function getColorPorNivel(nivel) {
+    const colores = {
+        'critico': '#dc2626',
+        'alto': '#f97316',
+        'medio': '#f59e0b',
+        'bajo': '#10b981'
+    };
+    return colores[nivel] || '#f59e0b';
+}
+
+function getIconoPorNivel(nivel) {
+    const iconos = {
+        'critico': '🔴',
+        'alto': '🟠',
+        'medio': '🟡',
+        'bajo': '🟢'
+    };
+    return iconos[nivel] || '⚠️';
+}
+
+// =====================================================
+// CENTRAR MAPA EN ZONA
+// =====================================================
+function centrarEnZona(id) {
+    const zona = riesgosData.find(r => r.id === id);
+    if (!zona || !mapa) {
+        mostrarToast('⚠️ Zona no encontrada', 'warning');
+        return;
+    }
+    
+    try {
+        const geo = JSON.parse(zona.coordenadas_poligono);
+        const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
+        
+        const latSum = coords.reduce((sum, c) => sum + c[0], 0);
+        const lngSum = coords.reduce((sum, c) => sum + c[1], 0);
+        const centerLat = latSum / coords.length;
+        const centerLng = lngSum / coords.length;
+        
+        mapa.setView([centerLat, centerLng], 15);
+        
+        // Resaltar el polígono
+        poligonosRiesgo.forEach(p => p.setStyle({ weight: 3, opacity: 0.8 }));
+        const index = riesgosData.findIndex(r => r.id === id);
+        if (index !== -1 && poligonosRiesgo[index]) {
+            poligonosRiesgo[index].setStyle({ weight: 6, opacity: 1, color: '#ffffff' });
+            poligonosRiesgo[index].openPopup();
+            setTimeout(() => {
+                if (poligonosRiesgo[index]) renderizarMapaRiesgos();
+            }, 3000);
+        }
+        
+        mostrarToast(`📍 ${zona.nombre}`, 'info');
+    } catch (error) {
+        console.error('Error al centrar en zona:', error);
+        mostrarToast('❌ Error al centrar en la zona', 'error');
+    }
+}
+
+// =====================================================
+// EDITAR ZONA
 // =====================================================
 async function editarZona(id) {
-    console.log('✏️ [2] EDITAR ZONA ID:', id);
+    console.log('✏️ EDITAR ZONA ID:', id);
     
     try {
         const res = await fetch(`/api/zonas/${id}`, {
@@ -152,23 +252,12 @@ async function editarZona(id) {
             }
         });
         
-        console.log('📡 [2] Respuesta HTTP:', res.status);
-        
-        if (!res.ok) {
-            throw new Error('Error al obtener los datos de la zona');
-        }
+        if (!res.ok) throw new Error('Error al obtener los datos de la zona');
         
         const zona = await res.json();
-        console.log('📦 [2] Datos de la zona:', zona);
-        
-        // =============================================
-        // GUARDAR DATOS EN VARIABLES GLOBALES
-        // =============================================
         zonaEditandoId = id;
         zonaEditandoData = zona;
-        console.log('💾 [2] zonaEditandoData guardado:', zonaEditandoData);
         
-        // Limpiar polígono anterior (sin borrar los datos)
         if (polygonEditando) {
             mapa.removeLayer(polygonEditando);
             polygonEditando = null;
@@ -176,8 +265,6 @@ async function editarZona(id) {
         
         const geo = JSON.parse(zona.coordenadas_poligono);
         const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
-        
-        console.log('📍 [2] Puntos del polígono:', coords);
         
         polygonEditando = L.polygon(coords, {
             color: '#3b82f6',
@@ -190,19 +277,17 @@ async function editarZona(id) {
         mapa.fitBounds(polygonEditando.getBounds(), { padding: [50, 50] });
         polygonEditando.editing.enable();
         
-        console.log('✅ [2] Polígono dibujado y editable');
-        
         mostrarBotonGuardarEdicion();
         mostrarToast('🔄 Arrastra los puntos azules para modificar el polígono', 'info');
         
     } catch (error) {
-        console.error('❌ [2] Error al cargar zona para editar:', error);
+        console.error('❌ Error al cargar zona para editar:', error);
         mostrarToast('❌ Error al cargar los datos de la zona', 'error');
     }
 }
 
 // =====================================================
-// BOTÓN GUARDAR
+// BOTÓN GUARDAR (CREACIÓN DINÁMICA CON CLASES CSS)
 // =====================================================
 function mostrarBotonGuardarEdicion() {
     const btnAnterior = document.getElementById('btn-guardar-edicion');
@@ -210,100 +295,52 @@ function mostrarBotonGuardarEdicion() {
     
     const btnGuardar = document.createElement('button');
     btnGuardar.id = 'btn-guardar-edicion';
-    btnGuardar.innerHTML = '💾 Guardar Cambios';
-    btnGuardar.style.cssText = `
-        position: absolute;
-        bottom: 100px;
-        right: 20px;
-        z-index: 1000;
-        background: #10b981;
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-size: 1rem;
-        font-weight: 600;
-        cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-        transition: all 0.3s;
-    `;
-    btnGuardar.onclick = function() {
-        guardarPoligonoEditado();
-    };
+    btnGuardar.className = 'btn-guardar-flotante';
+    btnGuardar.textContent = '💾 Guardar Cambios';
+    btnGuardar.onclick = guardarPoligonoEditado;
     
     const mapContainer = document.querySelector('.map-container');
     if (mapContainer) mapContainer.appendChild(btnGuardar);
 }
 
 // =====================================================
-// GUARDAR POLÍGONO EDITADO - CON LOGS DETALLADOS
+// GUARDAR POLÍGONO EDITADO
 // =====================================================
 function guardarPoligonoEditado() {
-    console.log('💾 [3] GUARDAR POLÍGONO EDITADO - INICIO');
-    console.log('💾 [3] polygonEditando:', polygonEditando);
-    console.log('💾 [3] zonaEditandoData:', zonaEditandoData);
-    console.log('💾 [3] zonaEditandoId:', zonaEditandoId);
-    
-    if (!polygonEditando) {
-        console.error('❌ [3] polygonEditando es null');
+    if (!polygonEditando || !zonaEditandoData) {
         mostrarToast('⚠️ No hay polígono para guardar', 'warning');
         return;
     }
     
-    if (!zonaEditandoData) {
-        console.error('❌ [3] zonaEditandoData es null');
-        mostrarToast('⚠️ No hay datos de la zona', 'warning');
-        return;
-    }
-    
     try {
-        console.log('🔍 [3] Obteniendo puntos del polígono...');
-        
         const latlngs = polygonEditando.getLatLngs()[0];
-        console.log('📍 [3] LatLngs raw:', latlngs);
-        
         if (!latlngs || latlngs.length < 3) {
-            console.error('❌ [3] El polígono no tiene suficientes puntos:', latlngs?.length);
             mostrarToast('⚠️ El polígono no tiene suficientes puntos', 'warning');
             return;
         }
         
-        console.log(`📍 [3] Número de puntos: ${latlngs.length}`);
-        
         const coordenadas = latlngs.map(c => [c.lng, c.lat]);
-        console.log('📍 [3] Coordenadas [lng, lat]:', coordenadas);
-        
         coordenadas.push(coordenadas[0]);
-        console.log('📍 [3] Coordenadas cerradas:', coordenadas);
         
         const geojson = {
             type: 'Polygon',
             coordinates: [coordenadas]
         };
         
-        console.log('📦 [3] GeoJSON final:', JSON.stringify(geojson));
+        if (!confirm(`¿Guardar cambios de "${zonaEditandoData.nombre}"?`)) return;
         
-        if (!confirm(`¿Guardar cambios de "${zonaEditandoData.nombre}"?`)) {
-            console.log('❌ [3] Usuario canceló');
-            return;
-        }
-        
-        console.log('📤 [3] Enviando al backend...');
         enviarActualizacion(zonaEditandoId, geojson);
         
     } catch (error) {
-        console.error('❌ [3] Error al obtener coordenadas:', error);
+        console.error('❌ Error al obtener coordenadas:', error);
         mostrarToast('❌ Error al leer el polígono', 'error');
     }
 }
 
 // =====================================================
-// ENVIAR ACTUALIZACIÓN AL BACKEND - CON LOGS
+// ENVIAR ACTUALIZACIÓN AL BACKEND
 // =====================================================
 async function enviarActualizacion(id, geojson) {
-    console.log('📤 [4] ENVIANDO ACTUALIZACIÓN - ID:', id);
-    console.log('📤 [4] GeoJSON:', geojson);
-    
     try {
         const payload = {
             nombre: zonaEditandoData.nombre,
@@ -315,9 +352,6 @@ async function enviarActualizacion(id, geojson) {
             coordenadas_poligono: JSON.stringify(geojson)
         };
         
-        console.log('📤 [4] Payload completo:', payload);
-        console.log('📤 [4] coordenadas_poligono:', payload.coordenadas_poligono);
-        
         const res = await fetch(`/api/zonas/${id}`, {
             method: 'PUT',
             headers: {
@@ -328,65 +362,45 @@ async function enviarActualizacion(id, geojson) {
             body: JSON.stringify(payload)
         });
         
-        console.log('📥 [4] Respuesta HTTP:', res.status);
-        console.log('📥 [4] Respuesta OK?', res.ok);
-        
         const data = await res.json();
-        console.log('📥 [4] Datos de respuesta:', data);
         
         if (res.ok) {
-            console.log('✅ [4] ¡ÉXITO! Polígono actualizado');
             mostrarToast('✅ Polígono actualizado correctamente', 'success');
             limpiarEdicion();
-            cargarRiesgos(); // ← CORREGIDO: cargarRiesgos (no cargarRiegos)
+            cargarRiesgos();
         } else {
-            console.error('❌ [4] Error del backend:', data);
             mostrarToast(`❌ ${data.error || 'Error al guardar'}`, 'error');
         }
     } catch (error) {
-        console.error('❌ [4] Error de conexión:', error);
+        console.error('❌ Error de conexión:', error);
         mostrarToast('❌ Error de conexión', 'error');
     }
 }
 
 // =====================================================
-// LIMPIAR EDICIÓN (SIN BORRAR DATOS)
+// LIMPIAR EDICIÓN
 // =====================================================
 function limpiarEdicion() {
-    console.log('🧹 [5] Limpiando edición...');
-    
-    // SOLO LIMPIAR EL POLÍGONO DEL MAPA, NO LOS DATOS
     if (polygonEditando) {
         mapa.removeLayer(polygonEditando);
         polygonEditando = null;
     }
-    
-    // NO BORRAR zonaEditandoId ni zonaEditandoData aquí
-    // Se borrarán después de guardar exitosamente
-    
     const btn = document.getElementById('btn-guardar-edicion');
     if (btn) btn.remove();
-    
-    console.log('✅ [5] Edición limpiada (datos conservados)');
 }
 
 // =====================================================
-// LIMPIAR TODO DESPUÉS DE GUARDAR
+// LIMPIAR COMPLETO
 // =====================================================
 function limpiarCompleto() {
-    console.log('🧹 [6] Limpiando completo...');
-    
     if (polygonEditando) {
         mapa.removeLayer(polygonEditando);
         polygonEditando = null;
     }
     zonaEditandoId = null;
     zonaEditandoData = null;
-    
     const btn = document.getElementById('btn-guardar-edicion');
     if (btn) btn.remove();
-    
-    console.log('✅ [6] Limpieza completa');
 }
 
 // =====================================================
@@ -432,3 +446,4 @@ window.cargarRiesgos = cargarRiesgos;
 window.editarZona = editarZona;
 window.eliminarZona = eliminarZona;
 window.cancelarEdicionPoligono = cancelarEdicionPoligono;
+window.centrarEnZona = centrarEnZona;

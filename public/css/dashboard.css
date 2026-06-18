@@ -816,3 +816,28 @@ body {
         font-size: 0.8rem;
     }
 }
+
+/* =============================================
+   BOTÓN FLOTANTE GUARDAR
+   ============================================= */
+.btn-guardar-flotante {
+    position: absolute;
+    bottom: 100px;
+    right: 20px;
+    z-index: 1000;
+    background: #10b981;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.btn-guardar-flotante:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 24px rgba(16, 185, 129, 0.3);
+}
