@@ -121,9 +121,9 @@ router.post('/', authMiddleware, async (req, res) => {
 // =====================================================
 // PUT: Actualizar zona de riesgo - CON LOGS DETALLADOS
 // =====================================================
+// PUT: Actualizar zona de riesgo
+// =====================================================
 router.put('/:id', authMiddleware, async (req, res) => {
-    console.log(`📥 [API] PUT /zonas/${req.params.id}`);
-    
     try {
         const { id } = req.params;
         const { 
@@ -131,60 +131,83 @@ router.put('/:id', authMiddleware, async (req, res) => {
             tipo, 
             nivel, 
             descripcion, 
-            coordenadas_poligono,
             poblacion_afectada,
-            viviendas_afectadas
+            viviendas_afectadas,
+            coordenadas_poligono
         } = req.body;
         
-        console.log('📦 [API] Body recibido:', req.body);
-        console.log('📦 [API] coordenadas_poligono:', coordenadas_poligono);
-        
         // Verificar que la zona existe
-        const check = await pool.query(
+        const checkResult = await pool.query(
             'SELECT id FROM zonas_riesgo WHERE id = $1 AND municipio_id = $2',
             [id, req.municipioId]
         );
         
-        if (check.rows.length === 0) {
-            console.log(`❌ [API] PUT /zonas/${id} - No encontrada`);
+        if (checkResult.rows.length === 0) {
             return res.status(404).json({ error: 'Zona no encontrada' });
         }
         
-        console.log(`✅ [API] PUT /zonas/${id} - Zona encontrada, actualizando...`);
+        const poblacion = parseInt(poblacion_afectada) || 0;
+        const viviendas = parseInt(viviendas_afectadas) || 0;
         
-        // ACTUALIZAR TODO INCLUYENDO EL POLÍGONO
-        const result = await pool.query(`
-            UPDATE zonas_riesgo 
-            SET 
-                nombre = $1,
-                tipo = $2,
-                nivel = $3,
-                descripcion = $4,
-                coordenadas_poligono = $5,
-                poblacion_afectada = $6,
-                viviendas_afectadas = $7,
-                fecha_actualizacion = NOW()
-            WHERE id = $8 AND municipio_id = $9
-            RETURNING id
-        `, [
-            nombre,
-            tipo || 'otro',
-            nivel || 'medio',
-            descripcion || '',
-            coordenadas_poligono,
-            parseInt(poblacion_afectada) || 0,
-            parseInt(viviendas_afectadas) || 0,
-            id,
-            req.municipioId
-        ]);
+        // Construir query dinámica
+        let query = 'UPDATE zonas_riesgo SET ';
+        const params = [];
+        let paramCount = 1;
+        let setClauses = [];
         
-        console.log(`✅ [API] PUT /zonas/${id} - Actualizada correctamente`);
-        console.log('📦 [API] Nuevo coordenadas_poligono:', coordenadas_poligono);
+        if (nombre !== undefined) {
+            setClauses.push(`nombre = $${paramCount}`);
+            params.push(nombre);
+            paramCount++;
+        }
+        if (tipo !== undefined) {
+            setClauses.push(`tipo = $${paramCount}`);
+            params.push(tipo);
+            paramCount++;
+        }
+        if (nivel !== undefined) {
+            setClauses.push(`nivel = $${paramCount}`);
+            params.push(nivel);
+            paramCount++;
+        }
+        if (descripcion !== undefined) {
+            setClauses.push(`descripcion = $${paramCount}`);
+            params.push(descripcion);
+            paramCount++;
+        }
+        if (poblacion !== undefined) {
+            setClauses.push(`poblacion_afectada = $${paramCount}`);
+            params.push(poblacion);
+            paramCount++;
+        }
+        if (viviendas !== undefined) {
+            setClauses.push(`viviendas_afectadas = $${paramCount}`);
+            params.push(viviendas);
+            paramCount++;
+        }
+        if (coordenadas_poligono !== undefined && coordenadas_poligono !== null) {
+            setClauses.push(`coordenadas_poligono = $${paramCount}`);
+            params.push(coordenadas_poligono);
+            paramCount++;
+        }
         
-        res.json({ success: true, mensaje: 'Zona actualizada' });
+        // Siempre actualizar fecha
+        setClauses.push(`fecha_actualizacion = NOW()`);
+        
+        query += setClauses.join(', ');
+        query += ` WHERE id = $${paramCount} AND municipio_id = $${paramCount + 1}`;
+        params.push(id);
+        params.push(req.municipioId);
+        
+        await pool.query(query, params);
+        
+        res.json({
+            success: true,
+            mensaje: 'Zona actualizada'
+        });
         
     } catch (error) {
-        console.error(`❌ [API] Error PUT /zonas/${req.params.id}:`, error);
+        console.error('❌ Error en PUT /zonas:', error);
         res.status(500).json({ error: 'Error al actualizar zona' });
     }
 });
