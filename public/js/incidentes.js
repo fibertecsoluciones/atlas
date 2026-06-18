@@ -6,8 +6,6 @@ let incidentesData = [];
 let marcadoresIncidentes = [];
 
 // =====================================================
-
-// =====================================================
 // ICONOS POR TIPO DE INCIDENTE
 // =====================================================
 const ICONOS_INCIDENTES = {
@@ -27,7 +25,7 @@ function getIconoIncidente(tipo) {
 }
 
 // =====================================================
-// INICIALIZAR - ESTO ES NUEVO
+// INICIALIZAR
 // =====================================================
 function init() {
     console.log('🚀 Inicializando Incidentes...');
@@ -57,7 +55,7 @@ function init() {
 }
 
 // =====================================================
-// INICIALIZAR TIPOS DE EMERGENCIA - ESTO ES NUEVO
+// INICIALIZAR TIPOS DE EMERGENCIA
 // =====================================================
 function initTiposEmergencia() {
     const tiposCards = document.querySelectorAll('.tipo-card');
@@ -73,7 +71,7 @@ function initTiposEmergencia() {
 }
 
 // =====================================================
-// CARGAR MUNICIPIOS - ESTO ES NUEVO
+// CARGAR MUNICIPIOS
 // =====================================================
 async function cargarMunicipios() {
     const selector = document.getElementById('municipio-selector');
@@ -106,7 +104,7 @@ async function cargarMunicipios() {
 }
 
 // =====================================================
-// ENVIAR REPORTE - YA ESTABA (SIN CAMBIOS)
+// ENVIAR REPORTE
 // =====================================================
 async function enviarReporte() {
     const municipioSelector = document.getElementById('municipio-selector');
@@ -200,19 +198,19 @@ async function enviarReporte() {
 }
 
 // =====================================================
-// CARGAR INCIDENTES (CORREGIDO)
+// CARGAR INCIDENTES (TODOS PARA ESTADÍSTICAS)
 // =====================================================
 async function cargarIncidentes() {
     console.log('📡 Cargando incidentes...');
     
-    // Usar window.userData (se establece en dashboard.js)
     if (!window.userData?.municipio?.slug) {
         console.warn('⚠️ No hay municipio seleccionado');
         return;
     }
     
     try {
-        const res = await fetch(`/api/incidentes/mapa`, {
+        // Usar /api/incidentes para obtener TODOS (incluyendo resueltos)
+        const res = await fetch(`/api/incidentes?limite=100`, {
             headers: {
                 'X-Municipio-Slug': window.userData.municipio.slug,
                 'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -224,13 +222,17 @@ async function cargarIncidentes() {
         }
         
         incidentesData = await res.json();
-        console.log('📡 Incidentes recibidos:', incidentesData.length);
+        console.log('📡 Incidentes recibidos (todos):', incidentesData.length);
         
-        // ✅ ACTUALIZAR ESTADÍSTICAS
+        // Actualizar estadísticas con TODOS los incidentes
         actualizarEstadisticas();
         
+        // Para el mapa, solo los NO resueltos
+        const noResueltos = incidentesData.filter(i => i.estado !== 'resuelto');
+        renderizarMapaIncidentes(noResueltos);
+        
+        // Para la lista, mostrar todos
         renderizarListaIncidentes();
-        renderizarMapaIncidentes();
         
     } catch (error) {
         console.error('❌ Error cargando incidentes:', error);
@@ -239,6 +241,10 @@ async function cargarIncidentes() {
         }
     }
 }
+
+// =====================================================
+// ACTUALIZAR ESTADÍSTICAS (CON TODOS LOS INCIDENTES)
+// =====================================================
 function actualizarEstadisticas() {
     console.log('📊 Actualizando estadísticas...');
     
@@ -249,52 +255,22 @@ function actualizarEstadisticas() {
         return new Date(i.fecha_reporte).toDateString() === new Date().toDateString();
     }).length;
     
-    // 🔍 LOGS PARA VERIFICAR
-    console.log('🔍 Buscando elementos del DOM...');
-    console.log('  - stats-activos:', document.getElementById('stats-activos'));
-    console.log('  - stats-proceso:', document.getElementById('stats-proceso'));
-    console.log('  - stats-resueltos:', document.getElementById('stats-resueltos'));
-    console.log('  - stats-hoy:', document.getElementById('stats-hoy'));
-    
-    // Intentar con getElementById directo (siempre funciona)
+    // Actualizar DOM
     const elActivos = document.getElementById('stats-activos');
     const elProceso = document.getElementById('stats-proceso');
     const elResueltos = document.getElementById('stats-resueltos');
     const elHoy = document.getElementById('stats-hoy');
     
-    if (elActivos) {
-        elActivos.textContent = activos;
-        console.log('✅ stats-activos actualizado a:', activos);
-    } else {
-        console.error('❌ stats-activos NO ENCONTRADO');
-    }
-    
-    if (elProceso) {
-        elProceso.textContent = enProceso;
-        console.log('✅ stats-proceso actualizado a:', enProceso);
-    } else {
-        console.error('❌ stats-proceso NO ENCONTRADO');
-    }
-    
-    if (elResueltos) {
-        elResueltos.textContent = resueltos;
-        console.log('✅ stats-resueltos actualizado a:', resueltos);
-    } else {
-        console.error('❌ stats-resueltos NO ENCONTRADO');
-    }
-    
-    if (elHoy) {
-        elHoy.textContent = hoy;
-        console.log('✅ stats-hoy actualizado a:', hoy);
-    } else {
-        console.error('❌ stats-hoy NO ENCONTRADO');
-    }
+    if (elActivos) elActivos.textContent = activos;
+    if (elProceso) elProceso.textContent = enProceso;
+    if (elResueltos) elResueltos.textContent = resueltos;
+    if (elHoy) elHoy.textContent = hoy;
     
     console.log(`📊 Activos: ${activos}, En proceso: ${enProceso}, Resueltos: ${resueltos}, Hoy: ${hoy}`);
 }
 
 // =====================================================
-// RENDERIZAR LISTA DE INCIDENTES - YA ESTABA (SIN CAMBIOS)
+// RENDERIZAR LISTA DE INCIDENTES
 // =====================================================
 function renderizarListaIncidentes() {
     if (!listaIncidentes) return;
@@ -345,15 +321,16 @@ function renderizarListaIncidentes() {
 }
 
 // =====================================================
-// RENDERIZAR INCIDENTES EN EL MAPA - YA ESTABA (SIN CAMBIOS)
+// RENDERIZAR INCIDENTES EN EL MAPA (SOLO NO RESUELTOS)
 // =====================================================
-function renderizarMapaIncidentes() {
+function renderizarMapaIncidentes(incidentes) {
     if (!mapa) return;
     
     marcadoresIncidentes.forEach(m => mapa.removeLayer(m));
     marcadoresIncidentes = [];
     
-    incidentesData.forEach(inc => {
+    // Solo mostrar incidentes NO resueltos
+    incidentes.forEach(inc => {
         const iconoData = getIconoIncidente(inc.tipo);
         
         let color = iconoData.color;
@@ -424,14 +401,14 @@ function renderizarMapaIncidentes() {
 }
 
 // =====================================================
-// FILTRAR INCIDENTES - YA ESTABA (SIN CAMBIOS)
+// FILTRAR INCIDENTES
 // =====================================================
 function filtrarIncidentes() {
     renderizarListaIncidentes();
 }
 
 // =====================================================
-// CAMBIAR ESTADO DE INCIDENTE - YA ESTABA (SIN CAMBIOS)
+// CAMBIAR ESTADO DE INCIDENTE
 // =====================================================
 async function cambiarEstadoIncidente(id, nuevoEstado) {
     try {
@@ -460,7 +437,7 @@ async function cambiarEstadoIncidente(id, nuevoEstado) {
 }
 
 // =====================================================
-// ELIMINAR INCIDENTE - YA ESTABA (SIN CAMBIOS)
+// ELIMINAR INCIDENTE
 // =====================================================
 async function eliminarIncidente(id) {
     if (!confirm('¿Estás seguro de eliminar este incidente?')) return;
@@ -488,7 +465,7 @@ async function eliminarIncidente(id) {
 }
 
 // =====================================================
-// EXPORTAR FUNCIONES GLOBALES - YA ESTABA (SIN CAMBIOS)
+// EXPORTAR FUNCIONES GLOBALES
 // =====================================================
 window.cargarIncidentes = cargarIncidentes;
 window.filtrarIncidentes = filtrarIncidentes;
@@ -496,6 +473,6 @@ window.cambiarEstadoIncidente = cambiarEstadoIncidente;
 window.eliminarIncidente = eliminarIncidente;
 
 // =====================================================
-// INICIAR CUANDO EL DOM ESTÉ LISTO - ESTO ES NUEVO
+// INICIAR
 // =====================================================
 document.addEventListener('DOMContentLoaded', init);
