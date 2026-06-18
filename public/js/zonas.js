@@ -49,24 +49,31 @@ async function cargarRiesgos() {
 }
 
 // =====================================================
-// RENDERIZAR LISTA DE ZONAS
+// RENDERIZAR LISTA DE ZONAS CON CLICK PARA CENTRAR
 // =====================================================
 function renderizarListaRiesgos() {
     if (!listaRiesgos) return;
     
     if (riesgosData.length === 0) {
-        listaRiesgos.innerHTML = '<div class="loading-spinner">No hay zonas de riesgo</div>';
+        listaRiesgos.innerHTML = `
+            <div class="loading-spinner">No hay zonas de riesgo</div>
+            <div style="text-align:center;margin-top:20px;">
+                <p style="color:#6b7f9f;font-size:0.9rem;">
+                    Haz clic en "✏️ Dibujar" para crear una zona
+                </p>
+            </div>
+        `;
         return;
     }
     
     listaRiesgos.innerHTML = riesgosData.map(r => `
-        <div class="riesgo-card" data-id="${r.id}">
+        <div class="riesgo-card" onclick="centrarEnZona(${r.id})" style="cursor:pointer;">
             <div class="riesgo-card-header">
                 <div class="riesgo-card-titulo">
                     <strong>⚠️ ${r.nombre}</strong>
                     <span class="riesgo-nivel ${r.nivel || 'medio'}">${r.nivel?.toUpperCase() || 'MEDIO'}</span>
                 </div>
-                <div class="riesgo-card-acciones">
+                <div class="riesgo-card-acciones" onclick="event.stopPropagation();">
                     <button class="btn-editar" onclick="abrirFormularioEdicion(${r.id})" title="Editar datos">✏️</button>
                     <button class="btn-eliminar" onclick="eliminarZona(${r.id})" title="Eliminar zona">🗑️</button>
                 </div>
