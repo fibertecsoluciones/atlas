@@ -1,81 +1,818 @@
 /* =============================================
-   POPUP PROFESIONAL - ZONAS DE RIESGO
+   DASHBOARD - ESTILO GOBIERNO
+   PROTECCIÓN CIVIL - SISTEMA ATLAS SAS
    ============================================= */
 
-/* Fondo del popup */
+/* =============================================
+   1. RESET Y BASE
+   ============================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', 'Roboto', system-ui, -apple-system, sans-serif;
+    background: #080d1a;
+    color: #e8edf5;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =============================================
+   2. SCROLLBAR
+   ============================================= */
+::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+}
+::-webkit-scrollbar-track {
+    background: #0d1524;
+}
+::-webkit-scrollbar-thumb {
+    background: #1e2d45;
+    border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #dc2626;
+}
+
+/* =============================================
+   3. HEADER INSTITUCIONAL
+   ============================================= */
+.header {
+    background: linear-gradient(135deg, #0a1120 0%, #141e30 50%, #0a1120 100%);
+    border-bottom: 2px solid #991b1b;
+    padding: 0 28px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 68px;
+    flex-shrink: 0;
+    z-index: 1000;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.header-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-logo .shield {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 0 8px rgba(220, 38, 38, 0.2));
+}
+
+.header h1 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.3px;
+}
+
+.header h1 span {
+    color: #dc2626;
+}
+
+.header-subtitle {
+    font-size: 0.65rem;
+    color: #6b7f9f;
+    font-weight: 400;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    border-left: 1px solid rgba(255, 255, 255, 0.06);
+    padding-left: 14px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+.municipio-badge {
+    padding: 4px 16px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    color: #fca5a5;
+    background: rgba(220, 38, 38, 0.1);
+    border: 1px solid rgba(220, 38, 38, 0.15);
+    font-weight: 500;
+}
+
+.user-name {
+    font-size: 0.85rem;
+    color: #c8d2e3;
+    font-weight: 500;
+}
+
+.btn-logout {
+    padding: 6px 18px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #fca5a5;
+    background: rgba(220, 38, 38, 0.06);
+    border: 1px solid rgba(220, 38, 38, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-logout:hover {
+    background: rgba(220, 38, 38, 0.15);
+    border-color: rgba(220, 38, 38, 0.25);
+}
+
+/* =============================================
+   4. ESTADÍSTICAS - TARJETAS INSTITUCIONALES
+   ============================================= */
+.stats-bar {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    padding: 14px 24px;
+    background: #0d1524;
+    border-bottom: 1px solid #1a2332;
+    flex-shrink: 0;
+}
+
+.stat-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: #0a1120;
+    border-radius: 8px;
+    border: 1px solid #1a2332;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+    background: #111d30;
+    border-color: #2a3d5a;
+    transform: translateY(-1px);
+}
+
+.stat-icon {
+    font-size: 1.4rem;
+    opacity: 0.8;
+}
+
+.stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.stat-number {
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: #e8edf5;
+}
+
+.stat-number.activos   { color: #dc2626; }
+.stat-number.proceso   { color: #f97316; }
+.stat-number.resueltos { color: #10b981; }
+.stat-number.albergues { color: #3b82f6; }
+.stat-number.riesgos   { color: #f59e0b; }
+.stat-number.hoy       { color: #8b5cf6; }
+
+.stat-label {
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: #6b7f9f;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+/* =============================================
+   5. CONTENEDOR PRINCIPAL
+   ============================================= */
+.main-container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+.map-container {
+    flex: 1;
+    position: relative;
+    background: #080d1a;
+}
+
+#mapa-dashboard {
+    width: 100%;
+    height: 100%;
+}
+
+/* =============================================
+   6. CONTROLES DEL MAPA
+   ============================================= */
+.map-controls {
+    position: absolute;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 1000;
+}
+
+.map-btn {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #1e2d45;
+    border-radius: 8px;
+    background: #0d1524;
+    color: #c8d2e3;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.map-btn:hover {
+    background: #1a2332;
+    border-color: #dc2626;
+    color: #dc2626;
+}
+
+/* Ocultar controles de zoom de Leaflet */
+.leaflet-control-zoom {
+    display: none !important;
+}
+
+/* =============================================
+   7. PANEL LATERAL
+   ============================================= */
+.panel-lateral {
+    width: 420px;
+    background: #0d1524;
+    border-left: 1px solid #1a2332;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+/* =============================================
+   8. TABS
+   ============================================= */
+.panel-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-bottom: 1px solid #1a2332;
+    flex-shrink: 0;
+    background: #0a1120;
+}
+
+.tab-btn {
+    padding: 12px 8px;
+    border: none;
+    background: transparent;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6b7f9f;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-bottom: 2px solid transparent;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.tab-btn:hover {
+    color: #e8edf5;
+    background: rgba(220, 38, 38, 0.04);
+}
+
+.tab-btn.active {
+    color: #dc2626;
+    border-bottom-color: #dc2626;
+}
+
+/* =============================================
+   9. CONTENIDO DE TABS
+   ============================================= */
+.panel-content {
+    flex: 1;
+    overflow: hidden;
+    background: #0d1524;
+}
+
+.tab-content {
+    display: none;
+    height: 100%;
+    flex-direction: column;
+    padding: 16px 18px;
+    overflow: hidden;
+}
+
+.tab-content.active {
+    display: flex;
+}
+
+/* =============================================
+   10. CABECERAS DE TABS
+   ============================================= */
+.tab-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-shrink: 0;
+}
+
+.tab-header h3 {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #e8edf5;
+}
+
+.tab-filtros {
+    display: flex;
+    gap: 6px;
+}
+
+.tab-filtros select {
+    padding: 4px 10px;
+    border: 1px solid #1a2332;
+    border-radius: 6px;
+    font-size: 0.65rem;
+    background: #0a1120;
+    color: #c8d2e3;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.tab-filtros select:focus {
+    outline: none;
+    border-color: #dc2626;
+}
+
+/* =============================================
+   11. BOTONES
+   ============================================= */
+.btn-agregar {
+    padding: 5px 14px;
+    background: #dc2626;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.btn-agregar:hover {
+    background: #991b1b;
+}
+
+/* =============================================
+   12. LISTAS SCROLLABLES
+   ============================================= */
+.lista-incidentes,
+.lista-albergues,
+.lista-riesgos,
+.lista-municipios,
+.lista-usuarios {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.lista-incidentes::-webkit-scrollbar,
+.lista-albergues::-webkit-scrollbar,
+.lista-riesgos::-webkit-scrollbar {
+    width: 3px;
+}
+
+.lista-incidentes::-webkit-scrollbar-thumb,
+.lista-albergues::-webkit-scrollbar-thumb,
+.lista-riesgos::-webkit-scrollbar-thumb {
+    background: #1e2d45;
+    border-radius: 10px;
+}
+
+/* =============================================
+   13. CARDS
+   ============================================= */
+.incidente-card,
+.albergue-card,
+.riesgo-card,
+.municipio-card,
+.usuario-card {
+    background: #0a1120;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border-left: 3px solid #1a2332;
+}
+
+.incidente-card:hover,
+.albergue-card:hover,
+.riesgo-card:hover,
+.municipio-card:hover,
+.usuario-card:hover {
+    transform: translateX(4px);
+    background: #111d30;
+}
+
+.incidente-card.prioridad-1 { border-left-color: #dc2626; }
+.incidente-card.prioridad-2 { border-left-color: #f97316; }
+.incidente-card.prioridad-3 { border-left-color: #10b981; }
+
+.incidente-tipo {
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #e8edf5;
+}
+
+.incidente-desc {
+    font-size: 0.8rem;
+    color: #9aaec9;
+    margin: 4px 0;
+}
+
+.incidente-fecha {
+    font-size: 0.7rem;
+    color: #4a5a7a;
+}
+
+.estado-badge {
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.55rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.estado-pendiente   { background: rgba(220, 38, 38, 0.15); color: #f87171; }
+.estado-en_proceso  { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+.estado-en_revision { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+.estado-resuelto    { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.estado-cancelado   { background: rgba(107, 114, 128, 0.15); color: #9ca3af; }
+
+/* =============================================
+   14. FORMULARIO
+   ============================================= */
+.form-reporte {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.form-reporte .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.form-reporte label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #8a9bb5;
+}
+
+.form-reporte select,
+.form-reporte textarea,
+.form-reporte input[type="text"],
+.form-reporte input[type="file"] {
+    padding: 8px 12px;
+    border: 1px solid #1a2332;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    background: #0a1120;
+    color: #e8edf5;
+    transition: border-color 0.3s ease;
+}
+
+.form-reporte select:focus,
+.form-reporte textarea:focus,
+.form-reporte input:focus {
+    outline: none;
+    border-color: #dc2626;
+}
+
+.form-reporte textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.ubicacion-input {
+    display: flex;
+    gap: 8px;
+}
+
+.ubicacion-input input {
+    flex: 1;
+}
+
+.btn-ubicacion {
+    padding: 8px 14px;
+    background: #111d30;
+    border: 1px solid #1a2332;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: #8a9bb5;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+}
+
+.btn-ubicacion:hover {
+    background: #1a2332;
+    color: #e8edf5;
+}
+
+.btn-enviar {
+    padding: 12px;
+    background: #dc2626;
+    color: #ffffff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 4px;
+}
+
+.btn-enviar:hover {
+    background: #991b1b;
+}
+
+/* =============================================
+   15. MODAL
+   ============================================= */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    z-index: 9999;
+}
+
+.modal-content {
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow: auto;
+    padding: 28px;
+    background: #0d1524;
+    border: 1px solid #1a2332;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.modal-header h3 {
+    color: #e8edf5;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.modal-close {
+    font-size: 1.4rem;
+    color: #4a5a7a;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.modal-close:hover {
+    color: #dc2626;
+}
+
+/* =============================================
+   16. TOAST
+   ============================================= */
+.toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 99999;
+}
+
+.toast {
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    color: #ffffff;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    animation: slideIn 0.3s ease;
+    max-width: 360px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.toast.success { background: #10b981; }
+.toast.error { background: #dc2626; }
+.toast.warning { background: #f97316; }
+.toast.info { background: #3b82f6; }
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateX(40px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* =============================================
+   17. LOADING
+   ============================================= */
+.loading-spinner {
+    text-align: center;
+    padding: 40px 0;
+    color: #4a5a7a;
+    font-size: 0.85rem;
+}
+
+.loading-spinner::after {
+    content: '';
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-left: 10px;
+    border: 2px solid #1a2332;
+    border-top-color: #dc2626;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* =============================================
+   18. POPUP PROFESIONAL - TEXTO BLANCO
+   ============================================= */
 .leaflet-popup-content-wrapper {
-    background: #111927 !important;
-    border-radius: 14px !important;
-    border: 1px solid #1e2d45 !important;
+    background: #0d1524 !important;
+    border-radius: 12px !important;
+    border: 1px solid #1a2332 !important;
     box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6) !important;
 }
 
-/* Punta del popup */
 .leaflet-popup-tip {
-    background: #111927 !important;
-    border: 1px solid #1e2d45 !important;
+    background: #0d1524 !important;
+    border: 1px solid #1a2332 !important;
 }
 
-/* Botón cerrar */
 .leaflet-popup-close-button {
     color: #6b7f9f !important;
     font-size: 1.2rem !important;
     padding: 6px 10px !important;
-    transition: color 0.3s !important;
+    transition: color 0.3s ease !important;
 }
 
 .leaflet-popup-close-button:hover {
     color: #dc2626 !important;
 }
 
-/* =============================================
-   TEXTO BLANCO EN EL POPUP - IMPORTANTE
-   ============================================= */
 .leaflet-popup-content {
-    animation: popupFadeIn 0.3s ease-out;
     max-height: 420px;
     overflow-y: auto;
     padding-right: 4px;
-    color: #e8edf5 !important; /* ← TEXTO BLANCO */
+    color: #e8edf5 !important;
+    font-size: 0.85rem !important;
+    line-height: 1.5 !important;
+    animation: popupFadeIn 0.3s ease-out;
 }
 
-/* Forzar texto blanco en todos los elementos del popup */
 .leaflet-popup-content * {
     color: #e8edf5 !important;
 }
 
-/* Excepción para textos que deben ser grises */
-.leaflet-popup-content .text-muted,
-.leaflet-popup-content .label {
+.leaflet-popup-content .text-muted {
     color: #8a9bb5 !important;
 }
 
 @keyframes popupFadeIn {
-    from {
-        opacity: 0;
-        transform: scale(0.92) translateY(8px);
-    }
-    to {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-    }
+    from { opacity: 0; transform: scale(0.95) translateY(6px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-/* Scroll para popups largos */
 .leaflet-popup-content::-webkit-scrollbar {
-    width: 4px;
+    width: 3px;
 }
 
 .leaflet-popup-content::-webkit-scrollbar-track {
-    background: #0a0e17;
-    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .leaflet-popup-content::-webkit-scrollbar-thumb {
     background: #1e2d45;
-    border-radius: 4px;
+    border-radius: 10px;
 }
 
 .leaflet-popup-content::-webkit-scrollbar-thumb:hover {
-    background: #2a3d5a;
+    background: #dc2626;
+}
+
+/* =============================================
+   19. RESPONSIVE
+   ============================================= */
+@media (max-width: 1200px) {
+    .stats-bar {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .panel-lateral {
+        width: 340px;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-bar {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 10px 14px;
+    }
+    .stat-card {
+        padding: 8px 12px;
+    }
+    .stat-number {
+        font-size: 1.1rem;
+    }
+
+    .main-container {
+        flex-direction: column;
+    }
+    .map-container {
+        height: 45vh;
+    }
+    .panel-lateral {
+        width: 100%;
+        height: 55vh;
+        border-left: none;
+        border-top: 1px solid #1a2332;
+    }
+
+    .header {
+        padding: 8px 14px;
+        height: auto;
+        min-height: 56px;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    .header h1 {
+        font-size: 0.95rem;
+    }
+    .header-subtitle {
+        font-size: 0.55rem;
+        padding-left: 10px;
+    }
+
+    .panel-tabs {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .tab-btn {
+        padding: 8px 4px;
+        font-size: 0.6rem;
+    }
+
+    .modal-content {
+        width: 95%;
+        padding: 18px;
+    }
+
+    .toast-container {
+        bottom: 16px;
+        right: 16px;
+    }
+    .toast {
+        padding: 10px 16px;
+        font-size: 0.8rem;
+    }
 }
