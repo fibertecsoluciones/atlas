@@ -203,11 +203,12 @@ async function enviarReporte() {
 }
 
 // =====================================================
-// CARGAR INCIDENTES - YA ESTABA (SIN CAMBIOS)
+// CARGAR INCIDENTES (CORREGIDO)
 // =====================================================
 async function cargarIncidentes() {
     console.log('📡 Cargando incidentes...');
     
+    // Usar window.userData (se establece en dashboard.js)
     if (!window.userData?.municipio?.slug) {
         console.warn('⚠️ No hay municipio seleccionado');
         return;
@@ -228,6 +229,7 @@ async function cargarIncidentes() {
         incidentesData = await res.json();
         console.log('📡 Incidentes recibidos:', incidentesData.length);
         
+        // ✅ ACTUALIZAR ESTADÍSTICAS
         actualizarEstadisticas();
         
         renderizarListaIncidentes();
@@ -240,11 +242,18 @@ async function cargarIncidentes() {
         }
     }
 }
-
 // =====================================================
-// ACTUALIZAR ESTADÍSTICAS - YA ESTABA (SIN CAMBIOS)
+// ACTUALIZAR ESTADÍSTICAS (CORREGIDO)
 // =====================================================
 function actualizarEstadisticas() {
+    console.log('📊 Actualizando estadísticas...');
+    
+    // Obtener referencias directamente (evitar usar variables globales)
+    const statsActivosEl = document.getElementById('stats-activos');
+    const statsProcesoEl = document.getElementById('stats-proceso');
+    const statsResueltosEl = document.getElementById('stats-resueltos');
+    const statsHoyEl = document.getElementById('stats-hoy');
+    
     const activos = incidentesData.filter(i => i.estado !== 'resuelto').length;
     const enProceso = incidentesData.filter(i => i.estado === 'en_proceso').length;
     const resueltos = incidentesData.filter(i => i.estado === 'resuelto').length;
@@ -252,10 +261,13 @@ function actualizarEstadisticas() {
         return new Date(i.fecha_reporte).toDateString() === new Date().toDateString();
     }).length;
     
-    if (statsActivos) statsActivos.textContent = activos;
-    if (statsProceso) statsProceso.textContent = enProceso;
-    if (statsResueltos) statsResueltos.textContent = resueltos;
-    if (statsHoy) statsHoy.textContent = hoy;
+    // Actualizar DOM
+    if (statsActivosEl) statsActivosEl.textContent = activos;
+    if (statsProcesoEl) statsProcesoEl.textContent = enProceso;
+    if (statsResueltosEl) statsResueltosEl.textContent = resueltos;
+    if (statsHoyEl) statsHoyEl.textContent = hoy;
+    
+    console.log(`📊 Activos: ${activos}, En proceso: ${enProceso}, Resueltos: ${resueltos}, Hoy: ${hoy}`);
 }
 
 // =====================================================
