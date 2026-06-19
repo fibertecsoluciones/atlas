@@ -80,6 +80,7 @@ app.get('/api/db-test', async (req, res) => {
 // RUTAS DE LA API
 // =====================================================
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/municipios', require('./routes/municipios')); 
 app.use('/api/incidentes', require('./routes/incidentes'));
 app.use('/api/albergues', require('./routes/albergues'));
 app.use('/api/zonas', require('./routes/zonas'));
