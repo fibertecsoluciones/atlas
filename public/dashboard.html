@@ -146,15 +146,35 @@
                 </div>
 
                 <!-- TAB: Riesgos -->
-                <div id="tab-riesgos" class="tab-content">
-                    <div class="tab-header">
-                        <h3>⚠️ Zonas de Riesgo</h3>
-                        <button class="btn-agregar" onclick="activarDibujoPoligono()">✏️ Dibujar</button>
-                    </div>
-                    <div id="lista-riesgos" class="lista-riesgos">
-                        <div class="loading-spinner">Cargando zonas de riesgo...</div>
-                    </div>
-                </div>
+<div id="tab-riesgos" class="tab-content">
+    <div class="tab-header">
+        <h3>⚠️ Zonas de Riesgo</h3>
+        <div class="tab-filtros">
+            <!-- FILTRO POR TIPO (NUEVO) -->
+            <select id="filtro-riesgo-tipo" onchange="filtrarRiesgos()">
+                <option value="todos">Todos los tipos</option>
+                <option value="inundacion">🌊 Inundación</option>
+                <option value="deslizamiento">⛰️ Deslizamiento</option>
+                <option value="incendio">🔥 Incendio</option>
+                <option value="sismo">🌍 Sismo</option>
+                <option value="vendaval">💨 Vendaval</option>
+                <option value="otro">⚠️ Otro</option>
+            </select>
+            <!-- FILTRO POR NIVEL (NUEVO) -->
+            <select id="filtro-riesgo-nivel" onchange="filtrarRiesgos()">
+                <option value="todos">Todos los niveles</option>
+                <option value="critico">🔴 Crítico</option>
+                <option value="alto">🟠 Alto</option>
+                <option value="medio">🟡 Medio</option>
+                <option value="bajo">🟢 Bajo</option>
+            </select>
+        </div>
+        <button class="btn-agregar" onclick="activarDibujoPoligono()">✏️ Dibujar</button>
+    </div>
+    <div id="lista-riesgos" class="lista-riesgos">
+        <div class="loading-spinner">Cargando zonas de riesgo...</div>
+    </div>
+</div>
 
                 <!-- TAB: Municipios -->
                 <div id="tab-municipios" class="tab-content">

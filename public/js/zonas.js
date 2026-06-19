@@ -49,14 +49,27 @@ async function cargarRiesgos() {
 }
 
 // =====================================================
-// RENDERIZAR LISTA DE ZONAS CON CLICK PARA CENTRAR
+// RENDERIZAR LISTA DE ZONAS CON FILTROS
 // =====================================================
 function renderizarListaRiesgos() {
     if (!listaRiesgos) return;
     
-    if (riesgosData.length === 0) {
+    // Obtener valores de los filtros
+    const filtroTipo = document.getElementById('filtro-riesgo-tipo')?.value || 'todos';
+    const filtroNivel = document.getElementById('filtro-riesgo-nivel')?.value || 'todos';
+    
+    // Aplicar filtros
+    let filtrados = riesgosData;
+    if (filtroTipo !== 'todos') {
+        filtrados = filtrados.filter(r => r.tipo === filtroTipo);
+    }
+    if (filtroNivel !== 'todos') {
+        filtrados = filtrados.filter(r => r.nivel === filtroNivel);
+    }
+    
+    if (filtrados.length === 0) {
         listaRiesgos.innerHTML = `
-            <div class="loading-spinner">No hay zonas de riesgo</div>
+            <div class="loading-spinner">No hay zonas de riesgo con estos filtros</div>
             <div style="text-align:center;margin-top:20px;">
                 <p style="color:#6b7f9f;font-size:0.9rem;">
                     Haz clic en "✏️ Dibujar" para crear una zona
@@ -66,7 +79,7 @@ function renderizarListaRiesgos() {
         return;
     }
     
-    listaRiesgos.innerHTML = riesgosData.map(r => `
+    listaRiesgos.innerHTML = filtrados.map(r => `
         <div class="riesgo-card" onclick="centrarEnZona(${r.id})" style="cursor:pointer;">
             <div class="riesgo-card-header">
                 <div class="riesgo-card-titulo">
@@ -74,12 +87,12 @@ function renderizarListaRiesgos() {
                     <span class="riesgo-nivel ${r.nivel || 'medio'}">${r.nivel?.toUpperCase() || 'MEDIO'}</span>
                 </div>
                 <div class="riesgo-card-acciones" onclick="event.stopPropagation();">
-                    <button class="btn-editar" onclick="abrirFormularioEdicion(${r.id})" title="Editar datos">✏️</button>
+                    <button class="btn-editar" onclick="editarZona(${r.id})" title="Editar datos">✏️</button>
                     <button class="btn-eliminar" onclick="eliminarZona(${r.id})" title="Eliminar zona">🗑️</button>
                 </div>
             </div>
             <div class="riesgo-card-info">
-                ${r.tipo || 'Sin tipo'} | ${r.descripcion || ''}
+                ${r.tipo ? r.tipo.charAt(0).toUpperCase() + r.tipo.slice(1) : 'Sin tipo'} | ${r.descripcion || ''}
             </div>
             <div class="riesgo-card-stats">
                 👥 ${r.poblacion_afectada || 0} personas | 🏠 ${r.viviendas_afectadas || 0} viviendas
@@ -89,15 +102,29 @@ function renderizarListaRiesgos() {
 }
 
 // =====================================================
-// RENDERIZAR ZONAS EN EL MAPA (CON POPUP MEJORADO)
+// RENDERIZAR ZONAS EN EL MAPA (CON FILTROS)
 // =====================================================
 function renderizarMapaRiesgos() {
     if (!mapa) return;
     
+    // Obtener valores de los filtros
+    const filtroTipo = document.getElementById('filtro-riesgo-tipo')?.value || 'todos';
+    const filtroNivel = document.getElementById('filtro-riesgo-nivel')?.value || 'todos';
+    
+    // Aplicar filtros
+    let filtrados = riesgosData;
+    if (filtroTipo !== 'todos') {
+        filtrados = filtrados.filter(r => r.tipo === filtroTipo);
+    }
+    if (filtroNivel !== 'todos') {
+        filtrados = filtrados.filter(r => r.nivel === filtroNivel);
+    }
+    
+    // Limpiar polígonos anteriores
     poligonosRiesgo.forEach(p => mapa.removeLayer(p));
     poligonosRiesgo = [];
     
-    riesgosData.forEach(r => {
+    filtrados.forEach(r => {
         try {
             const geo = JSON.parse(r.coordenadas_poligono);
             const coords = geo.coordinates[0].map(c => [c[1], c[0]]);
@@ -609,6 +636,15 @@ function centrarEnZona(id) {
         console.error('❌ [6] Error al centrar en zona:', error);
         mostrarToast('❌ Error al centrar en la zona', 'error');
     }
+}
+
+// =====================================================
+// FILTRAR RIESGOS POR TIPO Y NIVEL
+// =====================================================
+function filtrarRiesgos() {
+    console.log('🔍 Filtrando zonas de riesgo...');
+    renderizarListaRiesgos();
+    renderizarMapaRiesgos();
 }
 
 // =====================================================
