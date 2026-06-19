@@ -1,5 +1,5 @@
 /* =============================================
-   DASHBOARD - ESTILO GLASS SOBRIO
+   DASHBOARD - ESTILO GLASS SOBRIO (MEJORADO UX)
    PROTECCIÓN CIVIL - SISTEMA ATLAS SAS
    ============================================= */
 
@@ -12,6 +12,7 @@
     --bg-glass-light: rgba(255, 255, 255, 0.04);
     --border-glass: rgba(255, 255, 255, 0.06);
     --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.5);
     --color-red: #dc2626;
     --color-red-dark: #991b1b;
     --color-red-glow: rgba(220, 38, 38, 0.15);
@@ -20,6 +21,9 @@
     --text-muted: #8a9bb5;
     --text-dim: #4a5a7a;
     --font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+    --radius-card: 12px;
+    --radius-btn: 10px;
+    --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 * {
@@ -62,7 +66,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    height: 72px;
+    height: 68px;
     flex-shrink: 0;
     z-index: 1000;
     position: relative;
@@ -88,19 +92,12 @@ body {
 .header-logo {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
 }
 
-.logo-icon {
-    width: 40px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.8rem;
-    background: rgba(220, 38, 38, 0.12);
-    border-radius: 10px;
-    border: 1px solid rgba(220, 38, 38, 0.15);
+.header-logo .shield {
+    font-size: 1.6rem;
+    opacity: 0.9;
 }
 
 .header h1 {
@@ -115,7 +112,7 @@ body {
 }
 
 .header-subtitle {
-    font-size: 0.65rem;
+    font-size: 0.6rem;
     color: var(--text-muted);
     font-weight: 400;
     letter-spacing: 1.5px;
@@ -157,7 +154,7 @@ body {
     background: rgba(220, 38, 38, 0.06);
     border: 1px solid rgba(220, 38, 38, 0.1);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -174,8 +171,8 @@ body {
 .stats-bar {
     display: grid;
     grid-template-columns: repeat(6, 1fr);
-    gap: 12px;
-    padding: 16px 24px;
+    gap: 10px;
+    padding: 12px 24px;
     background: var(--bg-glass);
     backdrop-filter: blur(12px) saturate(160%);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
@@ -187,14 +184,15 @@ body {
     display: flex;
     align-items: center;
     gap: 14px;
-    padding: 12px 18px;
+    padding: 10px 18px;
     background: var(--bg-glass-light);
-    border-radius: 12px;
+    border-radius: var(--radius-card);
     border: 1px solid var(--border-glass);
     backdrop-filter: blur(8px);
-    transition: all 0.3s ease;
+    transition: var(--transition);
     position: relative;
     overflow: hidden;
+    cursor: default;
 }
 
 .stat-card::before {
@@ -212,7 +210,7 @@ body {
     background: rgba(255, 255, 255, 0.06);
     border-color: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-glass);
+    box-shadow: var(--shadow-hover);
 }
 
 .stat-card.activos   { --stat-color: var(--color-red); }
@@ -300,14 +298,14 @@ body {
     width: 44px;
     height: 44px;
     border: 1px solid var(--border-glass);
-    border-radius: 10px;
+    border-radius: var(--radius-btn);
     background: var(--bg-glass);
     backdrop-filter: blur(12px) saturate(160%);
     -webkit-backdrop-filter: blur(12px) saturate(160%);
     color: var(--text-secondary);
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -321,14 +319,57 @@ body {
     transform: scale(1.05);
 }
 
+/* =============================================
+   7. LAYER CONTROLS (NUEVO)
+   ============================================= */
+.layer-controls {
+    background: var(--bg-glass);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border-glass);
+    border-radius: var(--radius-btn);
+    padding: 10px 14px;
+    margin-bottom: 8px;
+    box-shadow: var(--shadow-glass);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 140px;
+}
+
+.layer-check {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: var(--transition);
+    padding: 2px 4px;
+    border-radius: 6px;
+}
+
+.layer-check:hover {
+    color: var(--text-primary);
+    background: var(--bg-glass-light);
+}
+
+.layer-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--color-red);
+    cursor: pointer;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
 /* Ocultar controles de zoom de Leaflet */
 .leaflet-control-zoom { display: none !important; }
 
 /* =============================================
-   7. PANEL LATERAL GLASS
+   8. PANEL LATERAL GLASS
    ============================================= */
 .panel-lateral {
-    width: 440px;
+    width: 420px;
     background: var(--bg-glass);
     backdrop-filter: blur(16px) saturate(180%);
     -webkit-backdrop-filter: blur(16px) saturate(180%);
@@ -339,7 +380,7 @@ body {
 }
 
 /* =============================================
-   8. TABS GLASS
+   9. TABS GLASS
    ============================================= */
 .panel-tabs {
     display: grid;
@@ -355,12 +396,12 @@ body {
     padding: 10px 8px;
     border: none;
     background: transparent;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     font-weight: 600;
     color: var(--text-muted);
     cursor: pointer;
     border-radius: 8px;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
@@ -388,7 +429,7 @@ body {
 }
 
 /* =============================================
-   9. PANEL CONTENT
+   10. PANEL CONTENT
    ============================================= */
 .panel-content {
     flex: 1;
@@ -400,21 +441,23 @@ body {
     display: none;
     height: 100%;
     flex-direction: column;
-    padding: 16px 20px;
+    padding: 14px 18px;
     overflow: hidden;
 }
 
 .tab-content.active { display: flex; }
 
 /* =============================================
-   10. TAB HEADERS
+   11. TAB HEADERS
    ============================================= */
 .tab-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
     flex-shrink: 0;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .tab-header h3 {
@@ -426,14 +469,15 @@ body {
 
 .tab-filtros {
     display: flex;
-    gap: 8px;
+    gap: 6px;
+    flex-wrap: wrap;
 }
 
 .tab-filtros select {
-    padding: 5px 12px;
+    padding: 4px 10px;
     border: 1px solid var(--border-glass);
-    border-radius: 8px;
-    font-size: 0.7rem;
+    border-radius: 6px;
+    font-size: 0.65rem;
     background: rgba(0, 0, 0, 0.2);
     color: var(--text-secondary);
     font-weight: 500;
@@ -447,21 +491,22 @@ body {
 }
 
 /* =============================================
-   11. BOTONES
+   12. BOTONES
    ============================================= */
 .btn-agregar {
-    padding: 6px 16px;
+    padding: 6px 14px;
     background: var(--color-red);
     color: white;
     border: none;
-    border-radius: 8px;
+    border-radius: 6px;
     font-size: 0.7rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     box-shadow: 0 4px 16px var(--color-red-glow);
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .btn-agregar:hover {
@@ -471,20 +516,22 @@ body {
 }
 
 /* =============================================
-   12. LISTAS SCROLLABLES
+   13. LISTAS SCROLLABLES
    ============================================= */
-.lista-incidentes,
-.lista-albergues,
-.lista-riesgos,
-.lista-municipios,
-.lista-usuarios {
+.scrollable {
     flex: 1;
     overflow-y: auto;
     padding-right: 4px;
 }
 
+.scrollable::-webkit-scrollbar { width: 3px; }
+.scrollable::-webkit-scrollbar-thumb { 
+    background: var(--color-red);
+    border-radius: 10px;
+}
+
 /* =============================================
-   13. CARDS GLASS
+   14. CARDS GLASS
    ============================================= */
 .incidente-card,
 .albergue-card,
@@ -492,11 +539,11 @@ body {
 .municipio-card,
 .usuario-card {
     background: var(--bg-glass-light);
-    border-radius: 10px;
-    padding: 14px 16px;
-    margin-bottom: 8px;
+    border-radius: var(--radius-card);
+    padding: 12px 14px;
+    margin-bottom: 6px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     border: 1px solid var(--border-glass);
     backdrop-filter: blur(4px);
 }
@@ -522,29 +569,32 @@ body {
     justify-content: space-between;
     align-items: center;
     color: var(--text-primary);
+    gap: 8px;
 }
 
 .incidente-desc {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
     margin: 4px 0;
+    line-height: 1.3;
 }
 
 .incidente-fecha {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--text-dim);
 }
 
 /* =============================================
-   14. ESTADO BADGES
+   15. ESTADO BADGES
    ============================================= */
 .estado-badge {
-    padding: 2px 12px;
+    padding: 2px 10px;
     border-radius: 20px;
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    white-space: nowrap;
 }
 
 .estado-pendiente   { background: rgba(220, 38, 38, 0.15); color: #f87171; }
@@ -554,11 +604,11 @@ body {
 .estado-cancelado   { background: rgba(107, 114, 128, 0.15); color: #9ca3af; }
 
 /* =============================================
-   15. RIESGO BADGES
+   16. RIESGO BADGES
    ============================================= */
 .riesgo-nivel {
     display: inline-block;
-    padding: 2px 12px;
+    padding: 2px 10px;
     border-radius: 20px;
     font-size: 0.55rem;
     font-weight: 700;
@@ -572,7 +622,7 @@ body {
 .riesgo-nivel.bajo   { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
 
 /* =============================================
-   16. RIESGO CARD HEADER
+   17. RIESGO CARD HEADER
    ============================================= */
 .riesgo-card-header {
     display: flex;
@@ -595,9 +645,9 @@ body {
     border: none;
     border-radius: 6px;
     padding: 4px 10px;
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--transition);
 }
 
 .btn-editar {
@@ -621,18 +671,18 @@ body {
 }
 
 .riesgo-card-info {
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
     margin: 4px 0;
 }
 
 .riesgo-card-stats {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     color: var(--text-muted);
 }
 
 /* =============================================
-   17. BOTÓN FLOTANTE GUARDAR
+   18. BOTÓN FLOTANTE GUARDAR
    ============================================= */
 .btn-guardar-flotante {
     position: absolute;
@@ -643,12 +693,12 @@ body {
     color: white;
     border: none;
     padding: 12px 24px;
-    border-radius: 12px;
-    font-size: 0.95rem;
+    border-radius: var(--radius-btn);
+    font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
     box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
-    transition: all 0.3s ease;
+    transition: var(--transition);
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -659,12 +709,12 @@ body {
 }
 
 /* =============================================
-   18. FORMULARIO
+   19. FORMULARIO
    ============================================= */
 .form-reporte {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
 }
 
 .form-reporte .form-group {
@@ -684,13 +734,13 @@ body {
 .form-reporte textarea,
 .form-reporte input[type="text"],
 .form-reporte input[type="file"] {
-    padding: 10px 14px;
+    padding: 8px 12px;
     border: 1px solid var(--border-glass);
-    border-radius: 10px;
+    border-radius: 8px;
     font-size: 0.85rem;
     background: rgba(0, 0, 0, 0.2);
     color: var(--text-primary);
-    transition: all 0.3s ease;
+    transition: var(--transition);
     backdrop-filter: blur(4px);
 }
 
@@ -715,14 +765,14 @@ body {
 .ubicacion-input input { flex: 1; }
 
 .btn-ubicacion {
-    padding: 10px 16px;
+    padding: 8px 14px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--border-glass);
-    border-radius: 10px;
-    font-size: 0.8rem;
+    border-radius: 8px;
+    font-size: 0.75rem;
     color: var(--text-muted);
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     white-space: nowrap;
 }
 
@@ -732,15 +782,15 @@ body {
 }
 
 .btn-enviar {
-    padding: 14px;
+    padding: 12px;
     background: var(--color-red);
     color: white;
     border: none;
-    border-radius: 10px;
-    font-size: 1rem;
+    border-radius: 8px;
+    font-size: 0.95rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: var(--transition);
     margin-top: 4px;
     box-shadow: 0 4px 20px var(--color-red-glow);
 }
@@ -752,7 +802,7 @@ body {
 }
 
 /* =============================================
-   19. MODAL GLASS
+   20. MODAL GLASS
    ============================================= */
 .modal-overlay {
     position: fixed;
@@ -770,12 +820,12 @@ body {
     max-width: 520px;
     max-height: 90vh;
     overflow: auto;
-    padding: 32px;
+    padding: 28px;
     background: var(--bg-glass);
     backdrop-filter: blur(20px) saturate(180%);
     -webkit-backdrop-filter: blur(20px) saturate(180%);
     border: 1px solid var(--border-glass);
-    border-radius: 20px;
+    border-radius: 16px;
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.5);
 }
 
@@ -783,28 +833,28 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 }
 
 .modal-header h3 {
     color: var(--text-primary);
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 700;
 }
 
 .modal-close {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     color: var(--text-dim);
     background: none;
     border: none;
     cursor: pointer;
-    transition: color 0.3s ease;
+    transition: var(--transition);
 }
 
 .modal-close:hover { color: var(--color-red); }
 
 /* =============================================
-   20. TOAST GLASS
+   21. TOAST GLASS
    ============================================= */
 .toast-container {
     position: fixed;
@@ -817,10 +867,10 @@ body {
 }
 
 .toast {
-    padding: 14px 24px;
-    border-radius: 12px;
+    padding: 12px 20px;
+    border-radius: var(--radius-btn);
     font-weight: 500;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: white;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     animation: slideIn 0.4s ease;
@@ -839,13 +889,13 @@ body {
 }
 
 /* =============================================
-   21. LOADING
+   22. LOADING
    ============================================= */
 .loading-spinner {
     text-align: center;
     padding: 40px 0;
     color: var(--text-dim);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
 }
 
 .loading-spinner::after {
@@ -866,10 +916,8 @@ body {
 }
 
 /* =============================================
-   POPUP GLASS - TAMAÑO PROPORCIONAL
+   23. POPUP GLASS
    ============================================= */
-
-/* Contenedor principal del popup */
 .leaflet-popup-content-wrapper {
     background: var(--bg-glass) !important;
     backdrop-filter: blur(20px) saturate(180%) !important;
@@ -877,43 +925,39 @@ body {
     border-radius: 12px !important;
     border: 1px solid var(--border-glass) !important;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
-    max-width: 320px !important;  /* ← TAMAÑO MÁXIMO FIJO */
-    min-width: 200px !important;  /* ← TAMAÑO MÍNIMO */
+    max-width: 320px !important;
+    min-width: 200px !important;
 }
 
-/* Punta del popup */
 .leaflet-popup-tip {
     background: var(--bg-glass) !important;
     border: 1px solid var(--border-glass) !important;
 }
 
-/* Botón cerrar */
 .leaflet-popup-close-button {
     color: var(--text-muted) !important;
     font-size: 1rem !important;
     padding: 4px 8px !important;
-    transition: color 0.3s ease !important;
+    transition: var(--transition) !important;
 }
 
 .leaflet-popup-close-button:hover { 
     color: var(--color-red) !important; 
 }
 
-/* Contenido del popup - TAMAÑO CONTROLADO */
 .leaflet-popup-content {
     color: var(--text-primary) !important;
-    font-size: 0.8rem !important;  /* ← TAMAÑO DE TEXTO FIJO */
+    font-size: 0.8rem !important;
     line-height: 1.4 !important;
-    max-height: 300px !important;   /* ← ALTURA MÁXIMA */
+    max-height: 300px !important;
     overflow-y: auto !important;
     padding: 4px 6px 6px 4px !important;
     animation: popupFadeIn 0.3s ease;
 }
 
-/* Forzar que TODO el contenido del popup sea legible */
 .leaflet-popup-content * { 
     color: var(--text-primary) !important; 
-    font-size: 0.8rem !important;  /* ← TAMAÑO UNIFORME */
+    font-size: 0.8rem !important;
 }
 
 .leaflet-popup-content .text-muted { 
@@ -943,7 +987,6 @@ body {
     font-size: 1rem !important;
 }
 
-/* Scroll del popup */
 .leaflet-popup-content::-webkit-scrollbar { 
     width: 3px !important; 
 }
@@ -956,38 +999,38 @@ body {
     border-radius: 4px;
 }
 
-/* Animación */
 @keyframes popupFadeIn {
     0% { opacity: 0; transform: scale(0.95) translateY(6px); }
     100% { opacity: 1; transform: scale(1) translateY(0); }
 }
+
 /* =============================================
-   23. POPUP RIESGO (ESTRUCTURA)
+   24. POPUP RIESGO (ESTRUCTURA)
    ============================================= */
 .popup-riesgo {
-    min-width: 260px;
-    max-width: 320px;
+    min-width: 240px;
+    max-width: 300px;
     padding: 2px 0;
 }
 
 .popup-header {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-bottom: 14px;
-    padding-bottom: 12px;
+    gap: 12px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
     border-bottom: 1px solid var(--border-glass);
 }
 
 .popup-icon {
-    font-size: 2rem;
-    width: 48px;
-    height: 48px;
+    font-size: 1.8rem;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: var(--bg-glass-light);
-    border-radius: 12px;
+    border-radius: 10px;
     border: 1px solid var(--border-glass);
 }
 
@@ -996,16 +1039,16 @@ body {
 }
 
 .popup-nombre {
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 700;
     color: var(--text-primary);
 }
 
 .popup-badge {
     display: inline-block;
-    padding: 2px 12px;
+    padding: 2px 10px;
     border-radius: 20px;
-    font-size: 0.6rem;
+    font-size: 0.55rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -1017,25 +1060,25 @@ body {
 .popup-badge.medio  { background: rgba(245, 158, 11, 0.2); color: #fcd34d; }
 .popup-badge.bajo   { background: rgba(16, 185, 129, 0.2); color: #6ee7b7; }
 
-.popup-body { margin-bottom: 12px; }
+.popup-body { margin-bottom: 10px; }
 
 .popup-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 10px;
+    gap: 6px;
+    margin-bottom: 8px;
 }
 
 .popup-item {
     background: var(--bg-glass-light);
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
     border: 1px solid var(--border-glass);
 }
 
 .popup-label {
     display: block;
-    font-size: 0.55rem;
+    font-size: 0.5rem;
     text-transform: uppercase;
     color: var(--text-muted);
     letter-spacing: 0.5px;
@@ -1044,7 +1087,7 @@ body {
 
 .popup-value {
     display: block;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-primary);
     margin-top: 2px;
@@ -1052,58 +1095,47 @@ body {
 
 .popup-descripcion {
     background: var(--bg-glass-light);
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
     border: 1px solid var(--border-glass);
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .popup-descripcion .popup-label { margin-bottom: 2px; }
 .popup-descripcion p {
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     color: var(--text-secondary);
-    line-height: 1.4;
+    line-height: 1.3;
 }
 
 .popup-stats {
     display: flex;
-    gap: 8px;
+    gap: 6px;
 }
 
 .popup-stat {
     flex: 1;
     text-align: center;
-    padding: 8px 4px;
+    padding: 6px 4px;
     background: var(--bg-glass-light);
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid var(--border-glass);
 }
 
 .popup-number {
     display: block;
-    font-size: 1.2rem;
+    font-size: 1.1rem;
     font-weight: 700;
     color: var(--text-primary);
 }
 
 .popup-stat .popup-label {
-    font-size: 0.5rem;
+    font-size: 0.45rem;
     margin-top: 2px;
 }
 
-.popup-footer {
-    margin-top: 10px;
-    padding-top: 10px;
-    border-top: 1px solid var(--border-glass);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.6rem;
-    color: var(--text-dim);
-}
-
 /* =============================================
-   24. RESPONSIVE
+   25. RESPONSIVE
    ============================================= */
 @media (max-width: 1200px) {
     .stats-bar { grid-template-columns: repeat(3, 1fr); }
@@ -1113,10 +1145,11 @@ body {
 @media (max-width: 768px) {
     .stats-bar {
         grid-template-columns: repeat(2, 1fr);
-        padding: 12px 16px;
+        padding: 10px 14px;
+        gap: 8px;
     }
-    .stat-card { padding: 10px 14px; }
-    .stat-number { font-size: 1.2rem; }
+    .stat-card { padding: 8px 12px; }
+    .stat-number { font-size: 1.1rem; }
 
     .main-container { flex-direction: column; }
     .map-container { height: 45vh; }
@@ -1128,26 +1161,26 @@ body {
     }
 
     .header {
-        padding: 12px 16px;
+        padding: 10px 16px;
         height: auto;
-        min-height: 60px;
+        min-height: 56px;
         flex-wrap: wrap;
-        gap: 8px;
+        gap: 6px;
     }
     .header h1 { font-size: 1rem; }
-    .header-subtitle { font-size: 0.55rem; }
+    .header-subtitle { font-size: 0.5rem; }
 
     .panel-tabs { grid-template-columns: repeat(3, 1fr); }
-    .tab-btn { padding: 8px 4px; font-size: 0.6rem; }
+    .tab-btn { padding: 8px 4px; font-size: 0.55rem; }
 
-    .modal-content { width: 95%; padding: 20px; }
+    .modal-content { width: 95%; padding: 16px; }
 
     .toast-container { bottom: 16px; right: 16px; }
-    .toast { padding: 12px 18px; font-size: 0.8rem; }
+    .toast { padding: 10px 16px; font-size: 0.8rem; }
 }
 
 /* =============================================
-   25. ANIMACIONES
+   26. ANIMACIONES
    ============================================= */
 @keyframes popupFadeIn {
     0% { opacity: 0; transform: scale(0.95) translateY(8px); }

@@ -18,7 +18,10 @@
     ============================================= -->
     <header class="header">
         <div class="header-left">
-            <h1>🚨 Protección Civil</h1>
+            <div class="header-logo">
+                <span class="shield">🛡️</span>
+                <h1>🚨 Protección <span>Civil</span></h1>
+            </div>
             <span class="header-subtitle">Sistema Atlas SAS</span>
         </div>
         <div class="header-right">
@@ -29,45 +32,45 @@
     </header>
 
     <!-- =============================================
-    BARRA DE ESTADÍSTICAS
+    BARRA DE ESTADÍSTICAS (COMPACTA)
     ============================================= -->
     <section class="stats-bar">
-        <div class="stat-card">
+        <div class="stat-card activos">
             <div class="stat-icon">🚨</div>
             <div class="stat-info">
                 <span class="stat-number" id="stats-activos">0</span>
                 <span class="stat-label">Activos</span>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card proceso">
             <div class="stat-icon">🔄</div>
             <div class="stat-info">
                 <span class="stat-number" id="stats-proceso">0</span>
                 <span class="stat-label">En Proceso</span>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card resueltos">
             <div class="stat-icon">✅</div>
             <div class="stat-info">
                 <span class="stat-number" id="stats-resueltos">0</span>
                 <span class="stat-label">Resueltos</span>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card albergues">
             <div class="stat-icon">🏠</div>
             <div class="stat-info">
                 <span class="stat-number" id="stats-albergues">0</span>
                 <span class="stat-label">Albergues</span>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card riesgos">
             <div class="stat-icon">⚠️</div>
             <div class="stat-info">
                 <span class="stat-number" id="stats-riesgos">0</span>
                 <span class="stat-label">Zonas Riesgo</span>
             </div>
         </div>
-        <div class="stat-card">
+        <div class="stat-card hoy">
             <div class="stat-icon">📅</div>
             <div class="stat-info">
                 <span class="stat-number" id="stats-hoy">0</span>
@@ -84,8 +87,25 @@
         <div class="map-container">
             <div id="mapa-dashboard"></div>
             
-            <!-- Controles del mapa (botones flotantes) -->
+            <!-- Controles del mapa -->
             <div class="map-controls">
+                <!-- Controles de capas -->
+                <div class="layer-controls">
+                    <label class="layer-check">
+                        <input type="checkbox" id="capa-incidentes" checked>
+                        <span>🚨 Incidentes</span>
+                    </label>
+                    <label class="layer-check">
+                        <input type="checkbox" id="capa-albergues" checked>
+                        <span>🏠 Albergues</span>
+                    </label>
+                    <label class="layer-check">
+                        <input type="checkbox" id="capa-riesgos" checked>
+                        <span>⚠️ Riesgos</span>
+                    </label>
+                </div>
+                
+                <!-- Botones de navegación -->
                 <button class="map-btn" onclick="centrarUbicacion()" title="Mi ubicación">📍</button>
                 <button class="map-btn" onclick="zoomIn()" title="Acercar">➕</button>
                 <button class="map-btn" onclick="zoomOut()" title="Alejar">➖</button>
@@ -94,7 +114,7 @@
         </div>
 
         <!-- =============================================
-        PANEL LATERAL - TABS (CORREGIDO)
+        PANEL LATERAL
         ============================================= -->
         <aside class="panel-lateral">
             <!-- Tabs -->
@@ -129,7 +149,7 @@
                             </select>
                         </div>
                     </div>
-                    <div id="lista-incidentes" class="lista-incidentes">
+                    <div id="lista-incidentes" class="lista-incidentes scrollable">
                         <div class="loading-spinner">Cargando incidentes...</div>
                     </div>
                 </div>
@@ -140,41 +160,38 @@
                         <h3>🏠 Albergues</h3>
                         <button class="btn-agregar" onclick="abrirFormularioAlbergue()">➕ Agregar</button>
                     </div>
-                    <div id="lista-albergues" class="lista-albergues">
+                    <div id="lista-albergues" class="lista-albergues scrollable">
                         <div class="loading-spinner">Cargando albergues...</div>
                     </div>
                 </div>
 
                 <!-- TAB: Riesgos -->
-<div id="tab-riesgos" class="tab-content">
-    <div class="tab-header">
-        <h3>⚠️ Zonas de Riesgo</h3>
-        <div class="tab-filtros">
-            <!-- FILTRO POR TIPO (NUEVO) -->
-            <select id="filtro-riesgo-tipo" onchange="filtrarRiesgos()">
-                <option value="todos">Todos los tipos</option>
-                <option value="inundacion">🌊 Inundación</option>
-                <option value="deslizamiento">⛰️ Deslizamiento</option>
-                <option value="incendio">🔥 Incendio</option>
-                <option value="sismo">🌍 Sismo</option>
-                <option value="vendaval">💨 Vendaval</option>
-                <option value="otro">⚠️ Otro</option>
-            </select>
-            <!-- FILTRO POR NIVEL (NUEVO) -->
-            <select id="filtro-riesgo-nivel" onchange="filtrarRiesgos()">
-                <option value="todos">Todos los niveles</option>
-                <option value="critico">🔴 Crítico</option>
-                <option value="alto">🟠 Alto</option>
-                <option value="medio">🟡 Medio</option>
-                <option value="bajo">🟢 Bajo</option>
-            </select>
-        </div>
-        <button class="btn-agregar" onclick="activarDibujoPoligono()">✏️ Dibujar</button>
-    </div>
-    <div id="lista-riesgos" class="lista-riesgos">
-        <div class="loading-spinner">Cargando zonas de riesgo...</div>
-    </div>
-</div>
+                <div id="tab-riesgos" class="tab-content">
+                    <div class="tab-header">
+                        <h3>⚠️ Zonas de Riesgo</h3>
+                        <div class="tab-filtros">
+                            <select id="filtro-riesgo-tipo" onchange="filtrarRiesgos()">
+                                <option value="todos">Todos los tipos</option>
+                                <option value="inundacion">🌊 Inundación</option>
+                                <option value="deslizamiento">⛰️ Deslizamiento</option>
+                                <option value="incendio">🔥 Incendio</option>
+                                <option value="sismo">🌍 Sismo</option>
+                                <option value="otro">⚠️ Otro</option>
+                            </select>
+                            <select id="filtro-riesgo-nivel" onchange="filtrarRiesgos()">
+                                <option value="todos">Todos los niveles</option>
+                                <option value="critico">🔴 Crítico</option>
+                                <option value="alto">🟠 Alto</option>
+                                <option value="medio">🟡 Medio</option>
+                                <option value="bajo">🟢 Bajo</option>
+                            </select>
+                        </div>
+                        <button class="btn-agregar" onclick="activarDibujoPoligono()">✏️ Dibujar</button>
+                    </div>
+                    <div id="lista-riesgos" class="lista-riesgos scrollable">
+                        <div class="loading-spinner">Cargando zonas de riesgo...</div>
+                    </div>
+                </div>
 
                 <!-- TAB: Municipios -->
                 <div id="tab-municipios" class="tab-content">
@@ -182,7 +199,7 @@
                         <h3>🏛️ Municipios</h3>
                         <button class="btn-agregar" onclick="abrirFormularioMunicipio()">➕ Agregar</button>
                     </div>
-                    <div id="lista-municipios" class="lista-municipios">
+                    <div id="lista-municipios" class="lista-municipios scrollable">
                         <div class="loading-spinner">Cargando municipios...</div>
                     </div>
                 </div>
@@ -193,7 +210,7 @@
                         <h3>👤 Usuarios</h3>
                         <button class="btn-agregar" onclick="abrirFormularioUsuario()">➕ Agregar</button>
                     </div>
-                    <div id="lista-usuarios" class="lista-usuarios">
+                    <div id="lista-usuarios" class="lista-usuarios scrollable">
                         <div class="loading-spinner">Cargando usuarios...</div>
                     </div>
                 </div>
@@ -261,20 +278,21 @@
     <div id="toast-container" class="toast-container"></div>
 
     <!-- =============================================
-    SCRIPTS (CORREGIDO - AGREGADOS auth.js, municipios.js, usuarios.js)
+    SCRIPTS
     ============================================= -->
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
     
-   <script src="/js/config.js"></script>
-<script src="/js/api.js"></script>
-<script src="/js/auth.js"></script>
-<script src="/js/municipios.js"></script>   <!-- Declara municipiosData -->
-<script src="/js/usuarios.js"></script>     <!-- Declara usuariosData -->
-<script src="/js/zonas.js"></script>        <!-- Lógica de zonas -->
-<script src="/js/incidentes.js"></script>   <!-- Lógica de incidentes -->
-<script src="/js/albergues.js"></script>    <!-- Lógica de albergues -->
-<script src="/js/dashboard.js"></script>    <!-- Solo orquesta -->
+    <!-- Scripts propios -->
+    <script src="/js/config.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/municipios.js"></script>
+    <script src="/js/usuarios.js"></script>
+    <script src="/js/zonas.js"></script>
+    <script src="/js/incidentes.js"></script>
+    <script src="/js/albergues.js"></script>
+    <script src="/js/dashboard.js"></script>
 </body>
 </html>

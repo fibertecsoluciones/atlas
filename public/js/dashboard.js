@@ -12,6 +12,11 @@ let drawnItems = null;
 let drawControl = null;
 let dibujando = false;
 
+// Variables para capas (NUEVO)
+let capaIncidentes = null;
+let capaAlbergues = null;
+let capaRiesgos = null;
+
 // =====================================================
 // REFERENCIAS DOM
 // =====================================================
@@ -118,7 +123,7 @@ function initMapaDashboard() {
         
         // Crear mapa SIN controles de zoom
         mapa = L.map('mapa-dashboard', {
-            zoomControl: false  // ← ELIMINA LOS BOTONES DE ZOOM
+            zoomControl: false
         }).setView([centro.lat, centro.lng], centro.zoom || 13);
         
         L.tileLayer('https://mt1.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
@@ -127,7 +132,7 @@ function initMapaDashboard() {
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         }).addTo(mapa);
         
-        // Configurar Leaflet Draw (si lo necesitas)
+        // Configurar Leaflet Draw
         drawnItems = L.featureGroup().addTo(mapa);
         
         drawControl = new L.Control.Draw({
@@ -180,12 +185,45 @@ function initMapaDashboard() {
             dibujando = false;
         });
         
+        // Crear capas para controles (NUEVO)
+        capaIncidentes = L.layerGroup().addTo(mapa);
+        capaAlbergues = L.layerGroup().addTo(mapa);
+        capaRiesgos = L.layerGroup().addTo(mapa);
+        
+        // Configurar eventos de checkboxes
+        document.getElementById('capa-incidentes')?.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                mapa.addLayer(capaIncidentes);
+            } else {
+                mapa.removeLayer(capaIncidentes);
+            }
+        });
+        
+        document.getElementById('capa-albergues')?.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                mapa.addLayer(capaAlbergues);
+            } else {
+                mapa.removeLayer(capaAlbergues);
+            }
+        });
+        
+        document.getElementById('capa-riesgos')?.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                mapa.addLayer(capaRiesgos);
+            } else {
+                mapa.removeLayer(capaRiesgos);
+            }
+        });
+        
         setTimeout(() => mapa.invalidateSize(), 500);
         console.log('✅ Mapa inicializado correctamente');
         
         window.mapa = mapa;
         window.drawnItems = drawnItems;
         window.drawControl = drawControl;
+        window.capaIncidentes = capaIncidentes;
+        window.capaAlbergues = capaAlbergues;
+        window.capaRiesgos = capaRiesgos;
         
     } catch (error) {
         console.error('❌ Error al inicializar mapa:', error);
@@ -195,9 +233,6 @@ function initMapaDashboard() {
 
 // =====================================================
 // ACTIVAR DIBUJO DE POLÍGONO
-// =====================================================
-// =====================================================
-// ACTIVAR DIBUJO DE POLÍGONO - VERSIÓN 100% FUNCIONAL
 // =====================================================
 function activarDibujoPoligono() {
     console.log('🖊️ Activando dibujo de polígono');
@@ -220,21 +255,13 @@ function activarDibujoPoligono() {
     dibujando = true;
     mostrarToast('✏️ Dibuja un polígono en el mapa', 'info');
     
-    // =============================================
-    // MÉTODO 1: Intentar con setDrawingMode (si existe)
-    // =============================================
     if (typeof drawControl.setDrawingMode === 'function') {
         drawControl.setDrawingMode('polygon');
         return;
     }
     
-    // =============================================
-    // MÉTODO 2: Método directo de Leaflet Draw (SIEMPRE FUNCIONA)
-    // =============================================
     try {
-        // Activar el modo polígono manualmente
         if (drawControl._toolbars && drawControl._toolbars.draw) {
-            // Obtener el handler del polígono
             const polygonHandler = drawControl._toolbars.draw._modes.polygon.handler;
             if (polygonHandler && typeof polygonHandler.enable === 'function') {
                 polygonHandler.enable();
@@ -243,10 +270,6 @@ function activarDibujoPoligono() {
             }
         }
         
-        // =============================================
-        // MÉTODO 3: Forzar mediante eventos (ÚLTIMO RECURSO)
-        // =============================================
-        // Simular clic en el botón de polígono de la interfaz
         const polygonButton = document.querySelector('.leaflet-draw-draw-polygon');
         if (polygonButton) {
             polygonButton.click();
@@ -254,7 +277,6 @@ function activarDibujoPoligono() {
             return;
         }
         
-        // Si nada funciona, mostrar error
         mostrarToast('⚠️ No se pudo activar el dibujo', 'error');
         dibujando = false;
         
@@ -540,9 +562,3 @@ window.getNivelColor = getNivelColor;
 window.mostrarFormularioZona = mostrarFormularioZona;
 
 document.addEventListener('DOMContentLoaded', initDashboard);
-
-console.log('🔍 Variables globales expuestas:');
-console.log('  - statsActivos:', window.statsActivos);
-console.log('  - statsProceso:', window.statsProceso);
-console.log('  - statsResueltos:', window.statsResueltos);
-console.log('  - statsHoy:', window.statsHoy);
