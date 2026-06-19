@@ -647,6 +647,11 @@ function filtrarRiesgos() {
     renderizarMapaRiesgos();
 }
 
+function editarZona(id) {
+    console.log('✏️ Editar zona desde tarjeta ID:', id);
+    abrirFormularioEdicion(id);
+}
+
 // =====================================================
 // EXPORTAR GLOBALES
 // =====================================================
