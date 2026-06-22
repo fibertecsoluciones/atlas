@@ -317,6 +317,9 @@ function renderizarListaIncidentes() {
 // =====================================================
 // RENDERIZAR INCIDENTES EN EL MAPA (SOLO NO RESUELTOS)
 // =====================================================
+// =====================================================
+// RENDERIZAR INCIDENTES EN EL MAPA (POPUP MEJORADO)
+// =====================================================
 function renderizarMapaIncidentes(incidentes) {
     if (!mapa) return;
     
@@ -336,63 +339,157 @@ function renderizarMapaIncidentes(incidentes) {
         
         const icono = crearIconoEmoji(iconoData.emoji, color, tamaño, true);
         
-        const estadoTexto = {
-            'pendiente': '⏳ Pendiente',
-            'en_proceso': '🔄 En proceso',
-            'en_revision': '🔍 En revisión',
-            'resuelto': '✅ Resuelto',
-            'cancelado': '❌ Cancelado'
-        }[inc.estado] || inc.estado;
-        
-        const prioridadTexto = inc.prioridad === 1 ? '🔴 Alta' : inc.prioridad === 2 ? '🟠 Media' : '🟢 Baja';
+        // === POPUP MEJORADO ===
+        const popupContent = construirPopupIncidente(inc);
         
         const marker = L.marker([inc.latitud, inc.longitud], { icon: icono })
-            .addTo(window.capaIncidentes)  // ← CAMBIO: addTo capa
-            .bindPopup(`
-                <div style="min-width: 220px; max-width: 300px;">
-                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">
-                        <div style="font-size:2rem;">${iconoData.emoji}</div>
-                        <div>
-                            <div style="font-weight:700; font-size:1rem; color:#e8edf5;">${inc.tipo.toUpperCase()}</div>
-                            <span style="font-size:0.6rem; padding:2px 10px; border-radius:12px; background:${color}33; color:${color}; border:1px solid ${color};">
-                                ${estadoTexto}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <div style="font-size:0.8rem; color:#c8d2e3; margin-bottom:8px;">${inc.descripcion || 'Sin descripción'}</div>
-                    
-                    <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
-                        <span style="font-size:0.7rem; color:#8a9bb5;">📅 ${formatFecha(inc.fecha_reporte)}</span>
-                        <span style="font-size:0.7rem; color:#8a9bb5;">🎯 ${prioridadTexto}</span>
-                    </div>
-                    
-                    ${inc.es_nuevo === 'nuevo' ? '<div style="text-align:center; padding:2px; background:rgba(220,38,38,0.1); border-radius:4px; margin-bottom:8px; font-size:0.7rem; color:#f87171;">🔴 NUEVO</div>' : ''}
-                    
-                    <div style="display:flex; gap:6px; flex-wrap:wrap; border-top:1px solid rgba(255,255,255,0.05); padding-top:8px;">
-                        <button onclick="cambiarEstadoIncidente(${inc.id}, 'en_proceso')" 
-                                style="flex:1; background:#f59e0b; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.65rem; cursor:pointer;">
-                            🔄 Proceso
-                        </button>
-                        <button onclick="cambiarEstadoIncidente(${inc.id}, 'resuelto')" 
-                                style="flex:1; background:#10b981; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.65rem; cursor:pointer;">
-                            ✅ Resolver
-                        </button>
-                        <button onclick="eliminarIncidente(${inc.id})" 
-                                style="flex:1; background:#dc2626; color:white; border:none; padding:4px 8px; border-radius:4px; font-size:0.65rem; cursor:pointer;">
-                            🗑️ Eliminar
-                        </button>
-                    </div>
-                </div>
-            `, {
-                maxWidth: 320,
-                className: 'custom-popup'
+            .addTo(window.capaIncidentes)
+            .bindPopup(popupContent, {
+                maxWidth: 360,
+                className: 'custom-popup incidente-popup',
+                autoPan: true,
+                keepInView: true
             });
+        
+        // =============================================
+        // TOOLTIP AL PASAR EL MOUSE (NUEVO)
+        // =============================================
+        const tooltipContent = `
+            <div style="font-weight: 600; font-size: 0.8rem; color: #e8edf5;">
+                ${iconoData.emoji} ${inc.tipo.toUpperCase()}
+            </div>
+            <div style="font-size: 0.65rem; color: #8a9bb5; margin-top: 2px;">
+                ${getEstadoTexto(inc.estado)} • ${formatFecha(inc.fecha_reporte)}
+            </div>
+        `;
+        
+        marker.bindTooltip(tooltipContent, {
+            permanent: false,
+            direction: 'auto',
+            offset: [0, -10],
+            className: 'tooltip-incidente',
+            sticky: true,
+            opacity: 0.95
+        });
         
         marcadoresIncidentes.push(marker);
     });
 }
 
+// =====================================================
+// CONSTRUIR POPUP DE INCIDENTE (NUEVA FUNCIÓN)
+// =====================================================
+function construirPopupIncidente(inc) {
+    const iconoData = getIconoIncidente(inc.tipo);
+    
+    // Colores según prioridad
+    const prioridadColor = inc.prioridad === 1 ? '#dc2626' : inc.prioridad === 2 ? '#f59e0b' : '#10b981';
+    const prioridadTexto = inc.prioridad === 1 ? '🔴 Alta' : inc.prioridad === 2 ? '🟠 Media' : '🟢 Baja';
+    
+    // Estado para mostrar
+    const estadoTexto = {
+        'pendiente': '⏳ Pendiente',
+        'en_proceso': '🔄 En proceso',
+        'en_revision': '🔍 En revisión',
+        'resuelto': '✅ Resuelto',
+        'cancelado': '❌ Cancelado'
+    }[inc.estado] || inc.estado;
+    
+    const estadoColor = {
+        'pendiente': '#dc2626',
+        'en_proceso': '#f59e0b',
+        'en_revision': '#8b5cf6',
+        'resuelto': '#10b981',
+        'cancelado': '#6b7280'
+    }[inc.estado] || '#6b7280';
+    
+    // Fecha formateada
+    const fechaReporte = new Date(inc.fecha_reporte).toLocaleString('es', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    
+    return `
+        <div class="popup-incidente">
+            <!-- CABECERA -->
+            <div class="popup-incidente-header">
+                <div class="popup-incidente-icono">${iconoData.emoji}</div>
+                <div class="popup-incidente-titulo">
+                    <div class="popup-incidente-nombre">${inc.tipo.toUpperCase()}</div>
+                    <div class="popup-incidente-badges">
+                        <span class="popup-badge-estado" style="background:${estadoColor}22; color:${estadoColor}; border:1px solid ${estadoColor};">
+                            ${estadoTexto}
+                        </span>
+                        <span class="popup-badge-prioridad" style="background:${prioridadColor}22; color:${prioridadColor}; border:1px solid ${prioridadColor};">
+                            ${prioridadTexto}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- DESCRIPCIÓN -->
+            <div class="popup-incidente-descripcion">
+                ${inc.descripcion || 'Sin descripción'}
+            </div>
+            
+            <!-- INFORMACIÓN -->
+            <div class="popup-incidente-info">
+                <div class="popup-incidente-item">
+                    <span class="popup-incidente-label">📅 Reportado</span>
+                    <span class="popup-incidente-valor">${fechaReporte}</span>
+                </div>
+                ${inc.direccion_aproximada ? `
+                    <div class="popup-incidente-item">
+                        <span class="popup-incidente-label">📍 Ubicación</span>
+                        <span class="popup-incidente-valor">${inc.direccion_aproximada}</span>
+                    </div>
+                ` : ''}
+                ${inc.ciudadano_nombre ? `
+                    <div class="popup-incidente-item">
+                        <span class="popup-incidente-label">👤 Reporta</span>
+                        <span class="popup-incidente-valor">${inc.ciudadano_nombre}</span>
+                    </div>
+                ` : ''}
+            </div>
+            
+            <!-- NUEVO BADGE -->
+            ${inc.es_nuevo === 'nuevo' ? `
+                <div class="popup-incidente-nuevo">🔴 NUEVO</div>
+            ` : ''}
+            
+            <!-- ACCIONES -->
+            <div class="popup-incidente-acciones">
+                ${inc.estado !== 'resuelto' ? `
+                    <button onclick="cambiarEstadoIncidente(${inc.id}, 'en_proceso')" 
+                            class="popup-btn proceso">
+                        🔄 En proceso
+                    </button>
+                    <button onclick="cambiarEstadoIncidente(${inc.id}, 'resuelto')" 
+                            class="popup-btn resuelto">
+                        ✅ Resolver
+                    </button>
+                ` : `
+                    <span style="font-size:0.7rem; color:#10b981; text-align:center; width:100%; padding:4px;">
+                        ✅ Incidente resuelto
+                    </span>
+                `}
+                <button onclick="eliminarIncidente(${inc.id})" 
+                        class="popup-btn eliminar">
+                    🗑️ Eliminar
+                </button>
+            </div>
+            
+            <!-- FOOTER -->
+            <div class="popup-incidente-footer">
+                <span>ID: ${inc.id}</span>
+                <span>${inc.es_nuevo === 'nuevo' ? '🟢 Nuevo' : ''}</span>
+            </div>
+        </div>
+    `;
+}
 // =====================================================
 // FILTRAR INCIDENTES
 // =====================================================
