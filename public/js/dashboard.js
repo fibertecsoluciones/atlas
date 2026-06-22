@@ -232,7 +232,7 @@ function initMapaDashboard() {
 }
 
 // =====================================================
-// FILTRAR TARJETAS SEGÚN CHECKBOXES (NUEVO)
+// FILTRAR TARJETAS SEGÚN CHECKBOXES
 // =====================================================
 function filtrarPorCapas() {
     const mostrarIncidentes = document.getElementById('capa-incidentes')?.checked;
@@ -248,6 +248,40 @@ function filtrarPorCapas() {
     if (listaRiesgos) {
         listaRiesgos.style.display = mostrarRiesgos ? '' : 'none';
     }
+}
+
+// =====================================================
+// CONTRAER/EXPANDIR PANEL LATERAL (NUEVO)
+// =====================================================
+function togglePanel() {
+    const panel = document.getElementById('panel-lateral');
+    const toggleBtn = document.getElementById('toggle-panel');
+    
+    if (!panel || !toggleBtn) return;
+    
+    panel.classList.toggle('contraido');
+    
+    // Cambiar ícono del botón
+    if (panel.classList.contains('contraido')) {
+        toggleBtn.innerHTML = '▶';
+        toggleBtn.title = 'Expandir panel';
+        toggleBtn.style.borderRadius = '10px';
+        toggleBtn.style.border = '1px solid var(--border-glass)';
+        toggleBtn.style.marginLeft = '0';
+    } else {
+        toggleBtn.innerHTML = '◀';
+        toggleBtn.title = 'Contraer panel';
+        toggleBtn.style.borderRadius = '10px 0 0 10px';
+        toggleBtn.style.borderRight = 'none';
+        toggleBtn.style.marginLeft = '-1px';
+    }
+    
+    // Forzar actualización del mapa
+    setTimeout(() => {
+        if (mapa) {
+            mapa.invalidateSize();
+        }
+    }, 500);
 }
 
 // =====================================================
@@ -331,7 +365,7 @@ function mostrarFormularioZona(geojson, layer) {
                 </select>
             </div>
             <div class="form-group">
-                <label>Nivel de risiko</label>
+                <label>Nivel de riesgo</label>
                 <select id="z-nivel">
                     <option value="critico">🔴 Crítico</option>
                     <option value="alto">🟠 Alto</option>
@@ -559,6 +593,14 @@ async function initDashboard() {
         if (typeof window.cargarAlbergues === 'function') window.cargarAlbergues();
         if (typeof window.cargarRiesgos === 'function') window.cargarRiesgos();
     }, 30000);
+    
+    // =============================================
+    // CONFIGURAR BOTÓN DE TOGGLE (NUEVO)
+    // =============================================
+    const toggleBtn = document.getElementById('toggle-panel');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', togglePanel);
+    }
 }
 
 // =====================================================
@@ -580,5 +622,6 @@ window.crearIconoEmoji = crearIconoEmoji;
 window.getNivelColor = getNivelColor;
 window.mostrarFormularioZona = mostrarFormularioZona;
 window.filtrarPorCapas = filtrarPorCapas;
+window.togglePanel = togglePanel;  // ← NUEVO
 
 document.addEventListener('DOMContentLoaded', initDashboard);
