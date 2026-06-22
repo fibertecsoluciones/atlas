@@ -12,7 +12,7 @@ let drawnItems = null;
 let drawControl = null;
 let dibujando = false;
 
-// Variables para capas (NUEVO)
+// Variables para capas
 let capaIncidentes = null;
 let capaAlbergues = null;
 let capaRiesgos = null;
@@ -121,7 +121,6 @@ function initMapaDashboard() {
         const slug = user.municipio?.slug || 'las-choapas';
         const centro = CENTROS_MUNICIPIOS[slug] || DEFAULT_CENTER;
         
-        // Crear mapa SIN controles de zoom
         mapa = L.map('mapa-dashboard', {
             zoomControl: false
         }).setView([centro.lat, centro.lng], centro.zoom || 13);
@@ -132,7 +131,6 @@ function initMapaDashboard() {
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
         }).addTo(mapa);
         
-        // Configurar Leaflet Draw
         drawnItems = L.featureGroup().addTo(mapa);
         
         drawControl = new L.Control.Draw({
@@ -165,7 +163,6 @@ function initMapaDashboard() {
         });
         mapa.addControl(drawControl);
         
-        // Evento cuando se crea un dibujo
         mapa.on(L.Draw.Event.CREATED, function(event) {
             const layer = event.layer;
             const type = event.layerType;
@@ -185,7 +182,7 @@ function initMapaDashboard() {
             dibujando = false;
         });
         
-        // Crear capas para controles (NUEVO)
+        // Crear capas para controles
         capaIncidentes = L.layerGroup().addTo(mapa);
         capaAlbergues = L.layerGroup().addTo(mapa);
         capaRiesgos = L.layerGroup().addTo(mapa);
@@ -197,6 +194,7 @@ function initMapaDashboard() {
             } else {
                 mapa.removeLayer(capaIncidentes);
             }
+            filtrarPorCapas();
         });
         
         document.getElementById('capa-albergues')?.addEventListener('change', function(e) {
@@ -205,6 +203,7 @@ function initMapaDashboard() {
             } else {
                 mapa.removeLayer(capaAlbergues);
             }
+            filtrarPorCapas();
         });
         
         document.getElementById('capa-riesgos')?.addEventListener('change', function(e) {
@@ -213,6 +212,7 @@ function initMapaDashboard() {
             } else {
                 mapa.removeLayer(capaRiesgos);
             }
+            filtrarPorCapas();
         });
         
         setTimeout(() => mapa.invalidateSize(), 500);
@@ -228,6 +228,25 @@ function initMapaDashboard() {
     } catch (error) {
         console.error('❌ Error al inicializar mapa:', error);
         mostrarToast('❌ Error al inicializar el mapa', 'error');
+    }
+}
+
+// =====================================================
+// FILTRAR TARJETAS SEGÚN CHECKBOXES (NUEVO)
+// =====================================================
+function filtrarPorCapas() {
+    const mostrarIncidentes = document.getElementById('capa-incidentes')?.checked;
+    const mostrarAlbergues = document.getElementById('capa-albergues')?.checked;
+    const mostrarRiesgos = document.getElementById('capa-riesgos')?.checked;
+    
+    if (listaIncidentes) {
+        listaIncidentes.style.display = mostrarIncidentes ? '' : 'none';
+    }
+    if (listaAlbergues) {
+        listaAlbergues.style.display = mostrarAlbergues ? '' : 'none';
+    }
+    if (listaRiesgos) {
+        listaRiesgos.style.display = mostrarRiesgos ? '' : 'none';
     }
 }
 
@@ -312,7 +331,7 @@ function mostrarFormularioZona(geojson, layer) {
                 </select>
             </div>
             <div class="form-group">
-                <label>Nivel de riesgo</label>
+                <label>Nivel de risiko</label>
                 <select id="z-nivel">
                     <option value="critico">🔴 Crítico</option>
                     <option value="alto">🟠 Alto</option>
@@ -560,5 +579,6 @@ window.mostrarToast = mostrarToast;
 window.crearIconoEmoji = crearIconoEmoji;
 window.getNivelColor = getNivelColor;
 window.mostrarFormularioZona = mostrarFormularioZona;
+window.filtrarPorCapas = filtrarPorCapas;
 
 document.addEventListener('DOMContentLoaded', initDashboard);

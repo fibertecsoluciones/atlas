@@ -54,11 +54,9 @@ async function cargarRiesgos() {
 function renderizarListaRiesgos() {
     if (!listaRiesgos) return;
     
-    // Obtener valores de los filtros
     const filtroTipo = document.getElementById('filtro-riesgo-tipo')?.value || 'todos';
     const filtroNivel = document.getElementById('filtro-riesgo-nivel')?.value || 'todos';
     
-    // Aplicar filtros
     let filtrados = riesgosData;
     if (filtroTipo !== 'todos') {
         filtrados = filtrados.filter(r => r.tipo === filtroTipo);
@@ -107,11 +105,9 @@ function renderizarListaRiesgos() {
 function renderizarMapaRiesgos() {
     if (!mapa) return;
     
-    // Obtener valores de los filtros
     const filtroTipo = document.getElementById('filtro-riesgo-tipo')?.value || 'todos';
     const filtroNivel = document.getElementById('filtro-riesgo-nivel')?.value || 'todos';
     
-    // Aplicar filtros
     let filtrados = riesgosData;
     if (filtroTipo !== 'todos') {
         filtrados = filtrados.filter(r => r.tipo === filtroTipo);
@@ -120,7 +116,6 @@ function renderizarMapaRiesgos() {
         filtrados = filtrados.filter(r => r.nivel === filtroNivel);
     }
     
-    // Limpiar polígonos anteriores
     poligonosRiesgo.forEach(p => mapa.removeLayer(p));
     poligonosRiesgo = [];
     
@@ -137,7 +132,7 @@ function renderizarMapaRiesgos() {
                 weight: 3,
                 fillColor: color,
                 fillOpacity: 0.25
-            }).addTo(mapa)
+            }).addTo(window.capaRiesgos)  // ← CAMBIO: addTo capa
               .bindPopup(popupContent, {
                   maxWidth: 320,
                   minWidth: 200,
@@ -232,7 +227,6 @@ async function editarPoligonoDesdePopup(id) {
         zonaEditandoData = zona;
         modoEdicion = true;
         
-        // Cerrar popup actual
         mapa.closePopup();
         
         if (polygonEditando) {
@@ -343,7 +337,6 @@ async function guardarPoligonoYMostrarFormularioBackend(id, geojson) {
         
         if (res.ok) {
             mostrarToast('✅ Polígono guardado correctamente', 'success');
-            // Limpiar edición del polígono
             if (polygonEditando) {
                 mapa.removeLayer(polygonEditando);
                 polygonEditando = null;
@@ -351,7 +344,6 @@ async function guardarPoligonoYMostrarFormularioBackend(id, geojson) {
             const btn = document.getElementById('btn-guardar-edicion');
             if (btn) btn.remove();
             
-            // Abrir formulario para editar datos
             abrirFormularioEdicion(id);
             modoEdicion = false;
         } else {
@@ -370,7 +362,6 @@ async function abrirFormularioEdicion(id) {
     console.log('📝 ABRIR FORMULARIO DE EDICIÓN ID:', id);
     
     try {
-        // Si no tenemos los datos, cargarlos
         if (!zonaEditandoData || zonaEditandoId !== id) {
             const res = await fetch(`/api/zonas/${id}`, {
                 headers: {
@@ -385,7 +376,6 @@ async function abrirFormularioEdicion(id) {
         
         const zona = zonaEditandoData;
         
-        // Cerrar popup si está abierto
         mapa.closePopup();
         
         modalTitulo.textContent = '✏️ Editar Datos de la Zona';
@@ -478,7 +468,6 @@ async function actualizarDatosZona(id) {
                 descripcion,
                 poblacion_afectada: poblacion,
                 viviendas_afectadas: viviendas
-                // NOTA: No enviamos coordenadas_poligono para preservar el polígono actual
             })
         });
         
@@ -495,6 +484,14 @@ async function actualizarDatosZona(id) {
         console.error('❌ Error:', error);
         mostrarToast('❌ Error de conexión', 'error');
     }
+}
+
+// =====================================================
+// EDITAR ZONA (DESDE TARJETA)
+// =====================================================
+function editarZona(id) {
+    console.log('✏️ Editar zona desde tarjeta ID:', id);
+    abrirFormularioEdicion(id);
 }
 
 // =====================================================
@@ -583,17 +580,17 @@ function getIconoPorNivel(nivel) {
 // CENTRAR MAPA EN UNA ZONA DE RIESGO
 // =====================================================
 function centrarEnZona(id) {
-    console.log('📍 [6] Centrando en zona ID:', id);
+    console.log('📍 Centrando en zona ID:', id);
     
     const zona = riesgosData.find(r => r.id === id);
     if (!zona) {
-        console.error('❌ [6] Zona no encontrada');
+        console.error('❌ Zona no encontrada');
         mostrarToast('⚠️ Zona no encontrada', 'warning');
         return;
     }
     
     if (!mapa) {
-        console.error('❌ [6] Mapa no disponible');
+        console.error('❌ Mapa no disponible');
         mostrarToast('⚠️ Mapa no disponible', 'warning');
         return;
     }
@@ -630,26 +627,21 @@ function centrarEnZona(id) {
         }
         
         mostrarToast(`📍 ${zona.nombre}`, 'info');
-        console.log(`✅ [6] Mapa centrado en: ${zona.nombre}`);
+        console.log(`✅ Mapa centrado en: ${zona.nombre}`);
         
     } catch (error) {
-        console.error('❌ [6] Error al centrar en zona:', error);
+        console.error('❌ Error al centrar en zona:', error);
         mostrarToast('❌ Error al centrar en la zona', 'error');
     }
 }
 
 // =====================================================
-// FILTRAR RIESGOS POR TIPO Y NIVEL
+// FILTRAR RIESGOS
 // =====================================================
 function filtrarRiesgos() {
     console.log('🔍 Filtrando zonas de riesgo...');
     renderizarListaRiesgos();
     renderizarMapaRiesgos();
-}
-
-function editarZona(id) {
-    console.log('✏️ Editar zona desde tarjeta ID:', id);
-    abrirFormularioEdicion(id);
 }
 
 // =====================================================
@@ -660,4 +652,6 @@ window.abrirFormularioEdicion = abrirFormularioEdicion;
 window.editarPoligonoDesdePopup = editarPoligonoDesdePopup;
 window.eliminarZona = eliminarZona;
 window.cancelarEdicionPoligono = cancelarEdicionPoligono;
-window.centrarEnZona = centrarEnZona;  // ← AHORA ESTÁ EXPORTADA
+window.centrarEnZona = centrarEnZona;
+window.filtrarRiesgos = filtrarRiesgos;
+window.editarZona = editarZona;

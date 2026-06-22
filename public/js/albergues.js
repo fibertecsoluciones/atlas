@@ -11,7 +11,7 @@ let marcadoresAlbergues = [];
 async function cargarAlbergues() {
     console.log('📡 Cargando albergues...');
     
-    if (!userData?.municipio?.slug) {
+    if (!window.userData?.municipio?.slug) {
         console.warn('⚠️ No hay municipio seleccionado');
         return;
     }
@@ -19,7 +19,8 @@ async function cargarAlbergues() {
     try {
         const res = await fetch(`/api/albergues/mapa`, {
             headers: {
-                'X-Municipio-Slug': userData.municipio.slug
+                'X-Municipio-Slug': window.userData.municipio.slug,
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
             }
         });
         
@@ -93,7 +94,7 @@ function renderizarMapaAlbergues() {
         const icono = crearIconoEmoji('🏠', color, 38, true);
         
         const marker = L.marker([a.latitud, a.longitud], { icon: icono })
-            .addTo(mapa)
+            .addTo(window.capaAlbergues)  // ← CAMBIO: addTo capa
             .bindPopup(`
                 <b>🏠 ${a.nombre}</b><br>
                 Capacidad: ${a.ocupacion_actual}/${a.capacidad_total}<br>
@@ -106,6 +107,14 @@ function renderizarMapaAlbergues() {
 }
 
 // =====================================================
-// EXPORTAR FUNCIONES GLOBALES
+// ABRIR FORMULARIO ALBERGUE
+// =====================================================
+function abrirFormularioAlbergue() {
+    mostrarToast('📝 Formulario de albergue en desarrollo', 'info');
+}
+
+// =====================================================
+// EXPORTAR GLOBALES
 // =====================================================
 window.cargarAlbergues = cargarAlbergues;
+window.abrirFormularioAlbergue = abrirFormularioAlbergue;

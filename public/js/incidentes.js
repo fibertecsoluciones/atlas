@@ -209,7 +209,6 @@ async function cargarIncidentes() {
     }
     
     try {
-        // Usar /api/incidentes para obtener TODOS (incluyendo resueltos)
         const res = await fetch(`/api/incidentes?limite=100`, {
             headers: {
                 'X-Municipio-Slug': window.userData.municipio.slug,
@@ -224,14 +223,10 @@ async function cargarIncidentes() {
         incidentesData = await res.json();
         console.log('📡 Incidentes recibidos (todos):', incidentesData.length);
         
-        // Actualizar estadísticas con TODOS los incidentes
         actualizarEstadisticas();
         
-        // Para el mapa, solo los NO resueltos
         const noResueltos = incidentesData.filter(i => i.estado !== 'resuelto');
         renderizarMapaIncidentes(noResueltos);
-        
-        // Para la lista, mostrar todos
         renderizarListaIncidentes();
         
     } catch (error) {
@@ -243,7 +238,7 @@ async function cargarIncidentes() {
 }
 
 // =====================================================
-// ACTUALIZAR ESTADÍSTICAS (CON TODOS LOS INCIDENTES)
+// ACTUALIZAR ESTADÍSTICAS
 // =====================================================
 function actualizarEstadisticas() {
     console.log('📊 Actualizando estadísticas...');
@@ -255,7 +250,6 @@ function actualizarEstadisticas() {
         return new Date(i.fecha_reporte).toDateString() === new Date().toDateString();
     }).length;
     
-    // Actualizar DOM
     const elActivos = document.getElementById('stats-activos');
     const elProceso = document.getElementById('stats-proceso');
     const elResueltos = document.getElementById('stats-resueltos');
@@ -329,7 +323,6 @@ function renderizarMapaIncidentes(incidentes) {
     marcadoresIncidentes.forEach(m => mapa.removeLayer(m));
     marcadoresIncidentes = [];
     
-    // Solo mostrar incidentes NO resueltos
     incidentes.forEach(inc => {
         const iconoData = getIconoIncidente(inc.tipo);
         
@@ -354,7 +347,7 @@ function renderizarMapaIncidentes(incidentes) {
         const prioridadTexto = inc.prioridad === 1 ? '🔴 Alta' : inc.prioridad === 2 ? '🟠 Media' : '🟢 Baja';
         
         const marker = L.marker([inc.latitud, inc.longitud], { icon: icono })
-            .addTo(mapa)
+            .addTo(window.capaIncidentes)  // ← CAMBIO: addTo capa
             .bindPopup(`
                 <div style="min-width: 220px; max-width: 300px;">
                     <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:8px;">
