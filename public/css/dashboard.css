@@ -1248,3 +1248,74 @@ select:-moz-focusring {
     color: #e8edf5 !important;
     text-shadow: 0 0 0 #e8edf5 !important;
 }
+
+/* =============================================
+   TOOLTIPS DE ZONAS DE RIESGO
+   ============================================= */
+
+/* Estilo del tooltip */
+.tooltip-riesgo {
+    background: rgba(17, 25, 45, 0.92) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    border: 1px solid rgba(220, 38, 38, 0.2) !important;
+    border-radius: 8px !important;
+    padding: 8px 14px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+    color: #e8edf5 !important;
+    font-family: 'Segoe UI', system-ui, sans-serif !important;
+    pointer-events: none !important;
+}
+
+/* Punta del tooltip */
+.tooltip-riesgo::before {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid transparent;
+    border-right: 6px solid transparent;
+    border-top: 6px solid rgba(17, 25, 45, 0.92);
+}
+
+/* Cursor pointer al pasar sobre polígonos */
+.poligono-riesgo {
+    cursor: pointer !important;
+}
+
+/* Animación de entrada del tooltip */
+.tooltip-riesgo {
+    animation: tooltipFadeIn 0.15s ease-out;
+}
+
+@keyframes tooltipFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =============================================
+   TOOLTIPS EN MODO OSCURO - MEJORA VISUAL
+   ============================================= */
+
+/* Tooltip con borde de color según nivel de riesgo */
+.tooltip-riesgo.critico {
+    border-color: rgba(220, 38, 38, 0.4) !important;
+}
+.tooltip-riesgo.alto {
+    border-color: rgba(249, 115, 22, 0.4) !important;
+}
+.tooltip-riesgo.medio {
+    border-color: rgba(245, 158, 11, 0.4) !important;
+}
+.tooltip-riesgo.bajo {
+    border-color: rgba(16, 185, 129, 0.4) !important;
+}

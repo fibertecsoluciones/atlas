@@ -102,6 +102,9 @@ function renderizarListaRiesgos() {
 // =====================================================
 // RENDERIZAR ZONAS EN EL MAPA (CON FILTROS)
 // =====================================================
+// =====================================================
+// RENDERIZAR ZONAS EN EL MAPA (CON TOOLTIPS)
+// =====================================================
 function renderizarMapaRiesgos() {
     if (!mapa) return;
     
@@ -127,19 +130,75 @@ function renderizarMapaRiesgos() {
             const color = getColorPorNivel(r.nivel);
             const popupContent = construirPopupRiesgo(r, coords);
             
+            // =============================================
+            // CREAR POLÍGONO CON TOOLTIP
+            // =============================================
             const polygon = L.polygon(coords, {
                 color: color,
                 weight: 3,
                 fillColor: color,
-                fillOpacity: 0.25
-            }).addTo(window.capaRiesgos)  // ← CAMBIO: addTo capa
-              .bindPopup(popupContent, {
-                  maxWidth: 320,
-                  minWidth: 200,
-                  className: 'custom-popup',
-                  autoPan: true,
-                  keepInView: true
-              });
+                fillOpacity: 0.25,
+                // Añadir clase para cursor pointer
+                className: 'poligono-riesgo'
+            }).addTo(window.capaRiesgos);
+            
+            // =============================================
+            // TOOLTIP AL PASAR EL MOUSE
+            // =============================================
+            // Tooltip con información básica
+            const tooltipContent = `
+                <div style="font-weight: 600; font-size: 0.85rem; color: #e8edf5;">
+                    ⚠️ ${r.nombre}
+                </div>
+                <div style="font-size: 0.7rem; color: #8a9bb5; margin-top: 2px;">
+                    ${r.tipo ? r.tipo.charAt(0).toUpperCase() + r.tipo.slice(1) : 'Sin tipo'} • 
+                    ${r.nivel ? r.nivel.toUpperCase() : 'MEDIO'}
+                </div>
+                ${r.poblacion_afectada > 0 ? `<div style="font-size: 0.65rem; color: #6b7f9f;">👥 ${r.poblacion_afectada} personas</div>` : ''}
+            `;
+            
+            // Bind tooltip (se muestra al pasar el mouse)
+            polygon.bindTooltip(tooltipContent, {
+                permanent: false,        // No permanente, solo al hover
+                direction: 'auto',       // Se coloca automáticamente
+                offset: [0, 0],          // Sin offset
+                className: 'tooltip-riesgo',
+                sticky: true,            // Sigue al mouse
+                opacity: 0.95
+            });
+            
+            // =============================================
+            // EFECTOS DE HOVER
+            // =============================================
+            polygon.on('mouseover', function(e) {
+                // Resaltar polígono al pasar el mouse
+                this.setStyle({
+                    weight: 4,
+                    opacity: 1,
+                    fillOpacity: 0.4
+                });
+                this.bringToFront();
+            });
+            
+            polygon.on('mouseout', function(e) {
+                // Restaurar estilo al salir
+                this.setStyle({
+                    weight: 3,
+                    opacity: 0.8,
+                    fillOpacity: 0.25
+                });
+            });
+            
+            // =============================================
+            // POPUP AL HACER CLIC (YA EXISTE)
+            // =============================================
+            polygon.bindPopup(popupContent, {
+                maxWidth: 320,
+                minWidth: 200,
+                className: 'custom-popup',
+                autoPan: true,
+                keepInView: true
+            });
             
             poligonosRiesgo.push(polygon);
         } catch(e) {
