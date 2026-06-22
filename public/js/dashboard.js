@@ -47,7 +47,7 @@ function mostrarToast(mensaje, tipo = 'info') {
     toast.className = `toast ${tipo}`;
     toast.textContent = mensaje;
     toastContainer.appendChild(toast);
-    setTimeout(() => toast.remove(), 4000);
+    setTimeout(() => toast.remove(), 10000);
 }
 
 function cerrarModal() {
