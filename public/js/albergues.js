@@ -1,0 +1,120 @@
+// =====================================================
+// ALBERGUES - MÓDULO COMPLETO
+// =====================================================
+
+let alberguesData = [];
+let marcadoresAlbergues = [];
+
+// =====================================================
+// CARGAR ALBERGUES
+// =====================================================
+async function cargarAlbergues() {
+    console.log('📡 Cargando albergues...');
+    
+    if (!window.userData?.municipio?.slug) {
+        console.warn('⚠️ No hay municipio seleccionado');
+        return;
+    }
+    
+    try {
+        const res = await fetch(`/api/albergues/mapa`, {
+            headers: {
+                'X-Municipio-Slug': window.userData.municipio.slug,
+                'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+        });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}`);
+        }
+        
+        alberguesData = await res.json();
+        console.log('📡 Albergues recibidos:', alberguesData.length);
+        
+        if (statsAlbergues) statsAlbergues.textContent = alberguesData.length;
+        
+        renderizarListaAlbergues();
+        renderizarMapaAlbergues();
+        
+    } catch (error) {
+        console.error('❌ Error cargando albergues:', error);
+        if (listaAlbergues) {
+            listaAlbergues.innerHTML = '<div class="error">❌ Error al cargar albergues</div>';
+        }
+    }
+}
+
+// =====================================================
+// RENDERIZAR LISTA DE ALBERGUES
+// =====================================================
+function renderizarListaAlbergues() {
+    if (!listaAlbergues) return;
+    
+    if (alberguesData.length === 0) {
+        listaAlbergues.innerHTML = '<div class="loading-spinner">No hay albergues registrados</div>';
+        return;
+    }
+    
+    listaAlbergues.innerHTML = alberguesData.map(a => `
+        <div class="albergue-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <strong>🏠 ${a.nombre}</strong>
+                <span style="font-size:0.7rem;padding:2px 10px;border-radius:12px;background:${a.capacidad_total > 0 && (a.ocupacion_actual / a.capacidad_total) > 0.8 ? '#dc2626' : '#10b981'};color:white;">
+                    ${a.ocupacion_actual}/${a.capacidad_total}
+                </span>
+            </div>
+            <div style="font-size:0.8rem;color:#8a9bb5;">
+                📍 ${a.direccion || 'Sin dirección'}
+            </div>
+            <div style="font-size:0.75rem;color:#6b7f9f;">
+                👤 ${a.encargado_nombre || 'Sin encargado'} | 📞 ${a.encargado_telefono || 'N/A'}
+            </div>
+            <div style="font-size:0.7rem;color:#6b7f9f;margin-top:4px;">
+                ${a.servicios?.join(' • ') || 'Sin servicios registrados'}
+            </div>
+        </div>
+    `).join('');
+}
+
+// =====================================================
+// RENDERIZAR ALBERGUES EN EL MAPA
+// =====================================================
+function renderizarMapaAlbergues() {
+    if (!mapa) return;
+    
+    marcadoresAlbergues.forEach(m => mapa.removeLayer(m));
+    marcadoresAlbergues = [];
+    
+    alberguesData.forEach(a => {
+        let color = '#10b981';
+        const pct = a.capacidad_total > 0 ? (a.ocupacion_actual / a.capacidad_total) * 100 : 0;
+        if (pct > 80) color = '#f97316';
+        if (pct >= 100) color = '#dc2626';
+        
+        const icono = crearIconoEmoji('🏠', color, 38, true);
+        
+        const marker = L.marker([a.latitud, a.longitud], { icon: icono })
+            .addTo(window.capaAlbergues)  // ← CAMBIO: addTo capa
+            .bindPopup(`
+                <b>🏠 ${a.nombre}</b><br>
+                Capacidad: ${a.ocupacion_actual}/${a.capacidad_total}<br>
+                📍 ${a.direccion || ''}<br>
+                👤 ${a.encargado_nombre || 'Sin encargado'}
+            `);
+        
+        marcadoresAlbergues.push(marker);
+    });
+}
+
+// =====================================================
+// ABRIR FORMULARIO ALBERGUE
+// =====================================================
+function abrirFormularioAlbergue() {
+    mostrarToast('📝 Formulario de albergue en desarrollo', 'info');
+}
+
+// =====================================================
+// EXPORTAR GLOBALES
+// =====================================================
+window.cargarAlbergues = cargarAlbergues;
+window.abrirFormularioAlbergue = abrirFormularioAlbergue;

@@ -1,0 +1,82 @@
+// =====================================================
+// API CLIENT - SISTEMA ATLAS SAS
+// =====================================================
+
+class APIClient {
+    constructor() {
+        this.baseUrl = API_BASE_URL;
+    }
+    
+    getHeaders(municipioSlug = null) {
+        const headers = { 'Content-Type': 'application/json' };
+        const token = localStorage.getItem('token');
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+        if (municipioSlug) headers['X-Municipio-Slug'] = municipioSlug;
+        return headers;
+    }
+    
+    // Incidentes
+    async reportarIncidente(datos, municipioSlug) {
+        const response = await fetch(`${this.baseUrl}/api/incidentes`, {
+            method: 'POST',
+            headers: this.getHeaders(municipioSlug),
+            body: JSON.stringify(datos)
+        });
+        return response.json();
+    }
+    
+    async obtenerIncidentes(municipioSlug) {
+        const response = await fetch(`${this.baseUrl}/api/incidentes/mapa`, {
+            headers: this.getHeaders(municipioSlug)
+        });
+        return response.json();
+    }
+    
+    async actualizarEstadoIncidente(id, estado, municipioSlug) {
+        const response = await fetch(`${this.baseUrl}/api/incidentes/${id}/estado`, {
+            method: 'PUT',
+            headers: this.getHeaders(municipioSlug),
+            body: JSON.stringify({ estado })
+        });
+        return response.json();
+    }
+    
+    // Albergues
+    async obtenerAlbergues(municipioSlug) {
+        const response = await fetch(`${this.baseUrl}/api/albergues/mapa`, {
+            headers: this.getHeaders(municipioSlug)
+        });
+        return response.json();
+    }
+    
+    // Zonas de riesgo
+    async obtenerZonasRiesgo(municipioSlug) {
+        const response = await fetch(`${this.baseUrl}/api/zonas`, {
+            headers: this.getHeaders(municipioSlug)
+        });
+        return response.json();
+    }
+    
+    // Autenticación
+    async login(email, password, municipioSlug) {
+    const payload = { email, password, municipio_slug: municipioSlug };
+    console.log('📤 Enviando login:', payload);  // ← Agrega esto
+    
+    const response = await fetch(`${this.baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+    });
+    
+    const data = await response.json();
+    console.log('📥 Respuesta del servidor:', data);  // ← Agrega esto
+    return data;
+}
+    
+    async obtenerMunicipios() {
+        const response = await fetch(`${this.baseUrl}/api/auth/municipios`);
+        return response.json();
+    }
+}
+
+const api = new APIClient();

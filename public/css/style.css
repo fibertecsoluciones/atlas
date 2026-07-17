@@ -1,0 +1,276 @@
+/* =====================================================
+   ESTILOS GLOBALES - SISTEMA ATLAS SAS
+   ===================================================== */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f0f2f5;
+}
+
+/* =====================================================
+   HEADER
+   ===================================================== */
+.header {
+    background: linear-gradient(135deg, #1e3a8a, #dc2626);
+    color: white;
+    padding: 15px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header select {
+    padding: 8px 15px;
+    border-radius: 8px;
+    border: none;
+    font-size: 1rem;
+    background: white;
+    cursor: pointer;
+}
+
+/* =====================================================
+   CONTENEDOR PRINCIPAL
+   ===================================================== */
+.container {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    height: calc(100vh - 80px);
+    gap: 0;
+}
+
+#mapa {
+    height: 100%;
+    width: 100%;
+}
+
+/* =====================================================
+   FORMULARIO DE REPORTE
+   ===================================================== */
+.form-panel {
+    background: white;
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+}
+
+.form-panel h2 {
+    color: #1e3a8a;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #dc2626;
+    padding-bottom: 10px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+select, textarea, input {
+    width: 100%;
+    padding: 10px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+select:focus, textarea:focus, input:focus {
+    outline: none;
+    border-color: #dc2626;
+}
+
+textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* =====================================================
+   TIPOS DE EMERGENCIA (GRID)
+   ===================================================== */
+.tipos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.tipo-card {
+    text-align: center;
+    padding: 10px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.tipo-card:hover {
+    border-color: #dc2626;
+    background: #fee2e2;
+}
+
+.tipo-card.seleccionado {
+    background: #dc2626;
+    color: white;
+    border-color: #dc2626;
+}
+
+.tipo-card span {
+    font-size: 28px;
+    display: block;
+}
+
+/* =====================================================
+   UBICACIÓN
+   ===================================================== */
+.ubicacion-info {
+    background: #e0f2fe;
+    padding: 10px;
+    border-radius: 8px;
+    margin: 15px 0;
+    font-size: 0.9rem;
+}
+
+/* =====================================================
+   BOTONES
+   ===================================================== */
+.btn-enviar {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.2s;
+}
+
+.btn-enviar:hover:not(:disabled) {
+    transform: translateY(-2px);
+}
+
+.btn-enviar:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+
+/* =====================================================
+   MENSAJES
+   ===================================================== */
+.loading {
+    display: none;
+    text-align: center;
+    padding: 10px;
+    color: #dc2626;
+}
+
+.success {
+    background: #10b981;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: none;
+}
+
+.error {
+    background: #ef4444;
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 10px;
+    display: none;
+}
+
+/* =====================================================
+   LOGIN
+   ===================================================== */
+.login-body {
+    background: linear-gradient(135deg, #1e3a8a, #dc2626);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.login-container {
+    background: white;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 400px;
+}
+
+.login-container h1 {
+    text-align: center;
+    color: #1e3a8a;
+    margin-bottom: 10px;
+}
+
+.login-container .subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+}
+
+.btn-login {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: white;
+    border: none;
+    padding: 14px;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    transition: transform 0.2s;
+}
+
+.btn-login:hover {
+    transform: translateY(-2px);
+}
+
+/* =====================================================
+   RESPONSIVE
+   ===================================================== */
+@media (max-width: 768px) {
+    .container {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+    
+    #mapa {
+        height: 400px;
+    }
+    
+    .form-panel {
+        max-height: 500px;
+    }
+    
+    .tipos-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
