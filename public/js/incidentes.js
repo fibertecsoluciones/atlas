@@ -104,7 +104,11 @@ async function cargarMunicipios() {
 }
 
 // =====================================================
+<<<<<<< HEAD
 // ENVIAR REPORTE (VERSIÓN MODIFICADA CON IMAGEN)
+=======
+// ENVIAR REPORTE
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
 // =====================================================
 async function enviarReporte() {
     const municipioSelector = document.getElementById('municipio-selector');
@@ -147,6 +151,7 @@ async function enviarReporte() {
     successDiv.style.display = 'none';
     errorDiv.style.display = 'none';
     
+<<<<<<< HEAD
     // ========== NUEVO: PROCESAR IMAGEN ==========
     let fotoBase64 = null;
     
@@ -173,12 +178,17 @@ async function enviarReporte() {
     }
     // ============================================
     
+=======
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
     const datos = {
         latitud: ubicacion.lat,
         longitud: ubicacion.lng,
         tipo: tipo,
         descripcion: descripcion,
+<<<<<<< HEAD
         foto_url: fotoBase64,
+=======
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
         ciudadano_nombre: nombreInput.value.trim() || 'Anónimo',
         ciudadano_telefono: telefonoInput.value.trim() || null
     };
@@ -189,7 +199,10 @@ async function enviarReporte() {
         if (result.success || result.id) {
             successDiv.style.display = 'block';
             
+<<<<<<< HEAD
             // Limpiar formulario
+=======
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
             descripcionInput.value = '';
             nombreInput.value = '';
             telefonoInput.value = '';
@@ -215,7 +228,10 @@ async function enviarReporte() {
             }, 5000);
         }
     } catch (error) {
+<<<<<<< HEAD
         console.error('Error al enviar:', error);
+=======
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
         errorDiv.style.display = 'block';
         setTimeout(() => {
             errorDiv.style.display = 'none';
@@ -223,7 +239,10 @@ async function enviarReporte() {
     } finally {
         loadingDiv.style.display = 'none';
         btnEnviar.disabled = false;
+<<<<<<< HEAD
         btnEnviar.innerHTML = '🚨 Enviar Reporte de Emergencia';
+=======
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
     }
 }
 
@@ -345,7 +364,14 @@ function renderizarListaIncidentes() {
 }
 
 // =====================================================
+<<<<<<< HEAD
 // RENDERIZAR INCIDENTES EN EL MAPA (POPUP MEJORADO CON IMAGEN)
+=======
+// RENDERIZAR INCIDENTES EN EL MAPA (SOLO NO RESUELTOS)
+// =====================================================
+// =====================================================
+// RENDERIZAR INCIDENTES EN EL MAPA (POPUP MEJORADO)
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
 // =====================================================
 function renderizarMapaIncidentes(incidentes) {
     if (!mapa) return;
@@ -366,7 +392,11 @@ function renderizarMapaIncidentes(incidentes) {
         
         const icono = crearIconoEmoji(iconoData.emoji, color, tamaño, true);
         
+<<<<<<< HEAD
         // === POPUP MEJORADO CON IMAGEN ===
+=======
+        // === POPUP MEJORADO ===
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
         const popupContent = construirPopupIncidente(inc);
         
         const marker = L.marker([inc.latitud, inc.longitud], { icon: icono })
@@ -378,7 +408,13 @@ function renderizarMapaIncidentes(incidentes) {
                 keepInView: true
             });
         
+<<<<<<< HEAD
         // Tooltip al pasar el mouse
+=======
+        // =============================================
+        // TOOLTIP AL PASAR EL MOUSE (NUEVO)
+        // =============================================
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
         const tooltipContent = `
             <div style="font-weight: 600; font-size: 0.8rem; color: #e8edf5;">
                 ${iconoData.emoji} ${inc.tipo.toUpperCase()}
@@ -402,7 +438,11 @@ function renderizarMapaIncidentes(incidentes) {
 }
 
 // =====================================================
+<<<<<<< HEAD
 // CONSTRUIR POPUP DE INCIDENTE (CON IMAGEN)
+=======
+// CONSTRUIR POPUP DE INCIDENTE (NUEVA FUNCIÓN)
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
 // =====================================================
 function construirPopupIncidente(inc) {
     const iconoData = getIconoIncidente(inc.tipo);
@@ -460,6 +500,7 @@ function construirPopupIncidente(inc) {
                 ${inc.descripcion || 'Sin descripción'}
             </div>
             
+<<<<<<< HEAD
             <!-- 🖼️ IMAGEN DEL INCIDENTE -->
             ${inc.foto_url ? `
                 <div class="popup-incidente-imagen" style="margin: 10px 0; text-align: center;">
@@ -478,6 +519,8 @@ function construirPopupIncidente(inc) {
                 </div>
             `}
             
+=======
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
             <!-- INFORMACIÓN -->
             <div class="popup-incidente-info">
                 <div class="popup-incidente-item">
@@ -533,7 +576,10 @@ function construirPopupIncidente(inc) {
         </div>
     `;
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
 // =====================================================
 // FILTRAR INCIDENTES
 // =====================================================
@@ -599,6 +645,7 @@ async function eliminarIncidente(id) {
 }
 
 // =====================================================
+<<<<<<< HEAD
 // COMPRIMIR IMAGEN PARA BASE64
 // =====================================================
 function comprimirImagenParaBD(file) {
@@ -685,6 +732,8 @@ function mostrarToast(mensaje, tipo) {
 }
 
 // =====================================================
+=======
+>>>>>>> f673bac0c0261e125325981b367f233ab96b3386
 // EXPORTAR FUNCIONES GLOBALES
 // =====================================================
 window.cargarIncidentes = cargarIncidentes;
