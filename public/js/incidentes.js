@@ -104,7 +104,7 @@ async function cargarMunicipios() {
 }
 
 // =====================================================
-// ENVIAR REPORTE
+// ENVIAR REPORTE (VERSIÓN MODIFICADA CON IMAGEN)
 // =====================================================
 async function enviarReporte() {
     const municipioSelector = document.getElementById('municipio-selector');
@@ -147,11 +147,38 @@ async function enviarReporte() {
     successDiv.style.display = 'none';
     errorDiv.style.display = 'none';
     
+    // ========== NUEVO: PROCESAR IMAGEN ==========
+    let fotoBase64 = null;
+    
+    if (fotoInput && fotoInput.files && fotoInput.files.length > 0) {
+        const file = fotoInput.files[0];
+        
+        // Validar tamaño máximo (2MB)
+        if (file.size > 2 * 1024 * 1024) {
+            alert('⚠️ La imagen es muy grande. Máximo 2MB.');
+            btnEnviar.disabled = false;
+            loadingDiv.style.display = 'none';
+            return;
+        }
+        
+        try {
+            fotoBase64 = await comprimirImagenParaBD(file);
+        } catch (error) {
+            console.error('Error al comprimir imagen:', error);
+            alert('❌ Error al procesar la imagen. Intenta con otra.');
+            btnEnviar.disabled = false;
+            loadingDiv.style.display = 'none';
+            return;
+        }
+    }
+    // ============================================
+    
     const datos = {
         latitud: ubicacion.lat,
         longitud: ubicacion.lng,
         tipo: tipo,
         descripcion: descripcion,
+        foto_url: fotoBase64,
         ciudadano_nombre: nombreInput.value.trim() || 'Anónimo',
         ciudadano_telefono: telefonoInput.value.trim() || null
     };
@@ -162,6 +189,7 @@ async function enviarReporte() {
         if (result.success || result.id) {
             successDiv.style.display = 'block';
             
+            // Limpiar formulario
             descripcionInput.value = '';
             nombreInput.value = '';
             telefonoInput.value = '';
@@ -187,6 +215,7 @@ async function enviarReporte() {
             }, 5000);
         }
     } catch (error) {
+        console.error('Error al enviar:', error);
         errorDiv.style.display = 'block';
         setTimeout(() => {
             errorDiv.style.display = 'none';
@@ -194,6 +223,7 @@ async function enviarReporte() {
     } finally {
         loadingDiv.style.display = 'none';
         btnEnviar.disabled = false;
+        btnEnviar.innerHTML = '🚨 Enviar Reporte de Emergencia';
     }
 }
 
@@ -315,10 +345,7 @@ function renderizarListaIncidentes() {
 }
 
 // =====================================================
-// RENDERIZAR INCIDENTES EN EL MAPA (SOLO NO RESUELTOS)
-// =====================================================
-// =====================================================
-// RENDERIZAR INCIDENTES EN EL MAPA (POPUP MEJORADO)
+// RENDERIZAR INCIDENTES EN EL MAPA (POPUP MEJORADO CON IMAGEN)
 // =====================================================
 function renderizarMapaIncidentes(incidentes) {
     if (!mapa) return;
@@ -339,7 +366,7 @@ function renderizarMapaIncidentes(incidentes) {
         
         const icono = crearIconoEmoji(iconoData.emoji, color, tamaño, true);
         
-        // === POPUP MEJORADO ===
+        // === POPUP MEJORADO CON IMAGEN ===
         const popupContent = construirPopupIncidente(inc);
         
         const marker = L.marker([inc.latitud, inc.longitud], { icon: icono })
@@ -351,9 +378,7 @@ function renderizarMapaIncidentes(incidentes) {
                 keepInView: true
             });
         
-        // =============================================
-        // TOOLTIP AL PASAR EL MOUSE (NUEVO)
-        // =============================================
+        // Tooltip al pasar el mouse
         const tooltipContent = `
             <div style="font-weight: 600; font-size: 0.8rem; color: #e8edf5;">
                 ${iconoData.emoji} ${inc.tipo.toUpperCase()}
@@ -377,7 +402,7 @@ function renderizarMapaIncidentes(incidentes) {
 }
 
 // =====================================================
-// CONSTRUIR POPUP DE INCIDENTE (NUEVA FUNCIÓN)
+// CONSTRUIR POPUP DE INCIDENTE (CON IMAGEN)
 // =====================================================
 function construirPopupIncidente(inc) {
     const iconoData = getIconoIncidente(inc.tipo);
@@ -435,6 +460,24 @@ function construirPopupIncidente(inc) {
                 ${inc.descripcion || 'Sin descripción'}
             </div>
             
+            <!-- 🖼️ IMAGEN DEL INCIDENTE -->
+            ${inc.foto_url ? `
+                <div class="popup-incidente-imagen" style="margin: 10px 0; text-align: center;">
+                    <img 
+                        src="${inc.foto_url}" 
+                        alt="Imagen del incidente"
+                        style="width: 100%; max-height: 180px; object-fit: cover; border-radius: 8px; cursor: pointer; border: 1px solid #e5e7eb;"
+                        onclick="event.stopPropagation(); window.open('${inc.foto_url}', '_blank')"
+                        onerror="this.style.display='none'"
+                    />
+                    <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">📸 Haz clic para ampliar</div>
+                </div>
+            ` : `
+                <div style="margin: 10px 0; padding: 12px; background: #f3f4f6; border-radius: 8px; text-align: center; color: #9ca3af; font-size: 13px;">
+                    📷 Sin imagen disponible
+                </div>
+            `}
+            
             <!-- INFORMACIÓN -->
             <div class="popup-incidente-info">
                 <div class="popup-incidente-item">
@@ -490,6 +533,7 @@ function construirPopupIncidente(inc) {
         </div>
     `;
 }
+
 // =====================================================
 // FILTRAR INCIDENTES
 // =====================================================
@@ -552,6 +596,92 @@ async function eliminarIncidente(id) {
         console.error('Error:', error);
         mostrarToast('❌ Error de conexión', 'error');
     }
+}
+
+// =====================================================
+// COMPRIMIR IMAGEN PARA BASE64
+// =====================================================
+function comprimirImagenParaBD(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        
+        reader.onload = function(event) {
+            const img = new Image();
+            img.src = event.target.result;
+            
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                
+                // Redimensionar a 600px de ancho (máximo)
+                let width = 600;
+                let height = (600 / img.width) * img.height;
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Convertir a Base64 con calidad 0.5
+                const base64 = canvas.toDataURL('image/jpeg', 0.5);
+                resolve(base64);
+            };
+            
+            img.onerror = function() {
+                reject('Error al cargar la imagen');
+            };
+        };
+        
+        reader.onerror = function() {
+            reject('Error al leer el archivo');
+        };
+    });
+}
+
+// =====================================================
+// FUNCIONES AUXILIARES (SI NO EXISTEN)
+// =====================================================
+function getEstadoTexto(estado) {
+    const estados = {
+        'pendiente': 'Pendiente',
+        'en_proceso': 'En proceso',
+        'en_revision': 'En revisión',
+        'resuelto': 'Resuelto',
+        'cancelado': 'Cancelado'
+    };
+    return estados[estado] || estado;
+}
+
+function formatFecha(fecha) {
+    if (!fecha) return 'Fecha desconocida';
+    const d = new Date(fecha);
+    return d.toLocaleDateString('es', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function mostrarToast(mensaje, tipo) {
+    // Función simple para mostrar mensajes
+    const toast = document.createElement('div');
+    toast.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: bold;
+        z-index: 9999;
+        background: ${tipo === 'success' ? '#10b981' : '#ef4444'};
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        max-width: 300px;
+    `;
+    toast.textContent = mensaje;
+    document.body.appendChild(toast);
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s';
+        setTimeout(() => toast.remove(), 500);
+    }, 3000);
 }
 
 // =====================================================
